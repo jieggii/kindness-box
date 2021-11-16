@@ -23,7 +23,7 @@ bot.dispatcher.add_router(registration.router)
 bot.dispatcher.add_router(home.router)
 
 try:
-    bot.run_forever()
+    bot.run_forever(ignore_errors=True)
 
 except KeyboardInterrupt:
     exit()

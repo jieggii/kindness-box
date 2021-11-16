@@ -134,7 +134,7 @@ async def home(event: BotEvent):
         elif text == HomeKeyboard.I_BROUGHT_GIFTS:
             await aliases.send_confirmation(
                 event,
-                text="Подтверди пожалуйста",  # todo
+                text="Подтверждение:",  # todo
                 confirmation_handler_state=HomeState.CONFIRM_I_BROUGHT_GIFTS,
             )
 
