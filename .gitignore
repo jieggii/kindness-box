@@ -1,3 +1,4 @@
+server.env
 .idea/
 poetry.lock
 test.py
