@@ -9,7 +9,7 @@ run-debug:
 	poetry run dotenv -f .env run python -m app
 
 docker-run:
-	docker run --network=host giving-tuesday-bot:latest
+	docker run -d --network=host giving-tuesday-bot:latest
 
 docker-build:
 	docker build --tag giving-tuesday-bot .
