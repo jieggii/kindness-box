@@ -7,6 +7,11 @@ _CHECKBOX_UNCHECKED = "[&#8195;]"
 _nl = "\n"
 
 
+def pretty_child_name(name: str):
+    first_name, last_name = name.split()
+    return f"{first_name} {last_name[0]}."
+
+
 async def get_children_list(current_donator: Donator):
     point = await current_donator.point.first()
     message = f"Список подарков:\n"
@@ -18,7 +23,7 @@ async def get_children_list(current_donator: Donator):
             message += f"{_CHECKBOX_CHECKED} "
         else:
             message += f"{_CHECKBOX_UNCHECKED} "
-        message += f"#{prettify_child_id(child.id)} {child.name}, {child.age} лет "
+        message += f"#{prettify_child_id(child.id)} {pretty_child_name(child.name)}, {child.age} лет "
 
         if donator:
             if donator == current_donator:
