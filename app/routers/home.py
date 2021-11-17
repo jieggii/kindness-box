@@ -46,7 +46,7 @@ async def send_all_children_list(event: BotEvent):
     kbd = CancelKeyboard()
     await event.answer(
         "Перечисли через запятую идентификационные номера (число после символа <<#>>) "
-        "до 5 детей, которым будешь покупать подарок"
+        "до 5 человек, которым будешь покупать подарок"
         f"{f' от имени организации <<{donator.org_name}>>.' if donator.org_name else '.'}\n"
         "Например: 3, 11, 12",
         keyboard=kbd.get_keyboard(),
@@ -65,25 +65,25 @@ async def choose_children(event: BotEvent):
     pretty_child_ids = user_input.get_list_of_child_ids(text)
 
     if not pretty_child_ids:
-        await event.answer("Я не понимаю тебя! Перечисли номера детей через запятую.\n" "Например: 3, 11, 12")
+        await event.answer("Я не понимаю тебя! Перечисли номера людей через запятую.\n" "Например: 3, 11, 12")
         return
 
     if len(pretty_child_ids) > 5:
-        await event.answer(f"Нельзя выбрать больше 5 детей. {templates.TRY_AGAIN}")
+        await event.answer(f"Нельзя выбрать больше 5 человек. {templates.TRY_AGAIN}")
         return
 
     child_ids = [parse_pretty_child_id(pretty_id) for pretty_id in pretty_child_ids]
     children = [await Child.filter(id=child_id).first() for child_id in child_ids]
 
     if not all(children):
-        await event.answer(f"Одного или несколько детей из выбранных тобой не существует. {templates.TRY_AGAIN}")
+        await event.answer(f"Одного или несколько человек из выбранных тобой не существует. {templates.TRY_AGAIN}")
         return
 
     donator = await Donator.filter(user_id=event.from_id).first()
 
     if await db.util.at_least_one_child_has_donator(donator, children):
         await event.answer(
-            f"Одному или нескольким детям из выбранных тобой уже кто-то покупает подарок. {templates.TRY_AGAIN}"
+            f"Одному или нескольким людям из выбранных тобой уже кто-то покупает подарок. {templates.TRY_AGAIN}"
         )
         return
 
@@ -91,7 +91,7 @@ async def choose_children(event: BotEvent):
     for child in children:  # assigning donator to new children
         await Child.filter(id=child.id).update(donator=donator)
 
-    response = "Отлично, теперь тебе нужно купить и упаковать подарки для этих детей:\n"
+    response = "Отлично, теперь тебе нужно купить и упаковать подарки для этих людей:\n"
     for child in children:
         response += f"- {child.name} (#{prettify_child_id(child.id)}) -- {child.gift}\n"
 
@@ -115,20 +115,20 @@ async def home(event: BotEvent):
             await send_all_children_list(event)
 
         elif text == HomeKeyboard.MY_LIST:
-            response = "Список детей, которым тебе нужно купить подарки:\n"
+            response = "Список людей, которым тебе нужно купить подарки:\n"
             for i, child in enumerate(children):
                 response += f"{i + 1}. {child.name} (#{prettify_child_id(child.id)}) -- {child.gift}\n"
             await event.answer(response)
             await event.answer(
                 "\nНе забудь подписать на подарке необходимые данные:\n"
-                f"{await output.get_necessary_data_list(donator)}"
+                f"{await output.get_necessary_data_list()}"
             )
         elif text == HomeKeyboard.INFO:
             point = await donator.point.first()
             await event.answer(f"Отнести подарки в городе {point.city} можно по адресу: {point.address}.\n\n")
             await event.answer(
                 "Обрати внимание: на подарке обязательно должны быть подписаны:\n"
-                f"{await output.get_necessary_data_list(donator)}"
+                f"{await output.get_necessary_data_list()}"
             )
 
         elif text == HomeKeyboard.I_BROUGHT_GIFTS:

@@ -9,7 +9,7 @@ _nl = "\n"
 
 async def get_children_list(current_donator: Donator):
     point = await current_donator.point.first()
-    message = f"Список детей в городе {point.city}:\n"
+    message = f"Список подарков:\n"
     children = await Child.filter(point=point).order_by("id")
 
     for child in children:
@@ -31,11 +31,10 @@ async def get_children_list(current_donator: Donator):
     return message
 
 
-async def get_necessary_data_list(donator: Donator):
+async def get_necessary_data_list():
     return (
-        "- Имя ребенка\n"
-        "- Идентификационный номер ребенка*\n"
-        f"{f'- Название твоей организации (<<{donator.org_name}>>){_nl}{_nl}' if donator.org_name else f'{_nl}{_nl}'}"
+        "- Имя человека\n"
+        "- Идентификационный номер человека*\n"
         f"Эту информацию можно узнать, нажав на кнопку <<{HomeKeyboard.MY_LIST}>>\n"
         f"*Идентификационный номер -- число, написанное в скобках после символа <<#>>."
     )
