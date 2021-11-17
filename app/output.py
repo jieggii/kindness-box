@@ -23,7 +23,7 @@ async def get_children_list(current_donator: Donator):
             message += f"{_CHECKBOX_CHECKED} "
         else:
             message += f"{_CHECKBOX_UNCHECKED} "
-        message += f"#{prettify_child_id(child.id)} {pretty_child_name(child.name)}, {child.age} лет "
+        message += f"#{prettify_child_id(child.id)} {pretty_child_name(child.name)} {child.age} лет "
 
         if donator:
             if donator == current_donator:
