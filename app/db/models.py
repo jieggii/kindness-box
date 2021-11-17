@@ -7,7 +7,7 @@ from tortoise.models import Model
 class PointCity(str, Enum):
     KOSTOMUKSHA = "Костомукша"
     PETROZAVODSK = "Петрозаводск"
-    SEGEZHA = "Сегежа"
+    SEGEZHA = "Муезерка"
 
 
 class Point(Model):
