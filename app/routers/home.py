@@ -120,8 +120,7 @@ async def home(event: BotEvent):
                 response += f"{i + 1}. {child.name} (#{prettify_child_id(child.id)}) -- {child.gift}\n"
             await event.answer(response)
             await event.answer(
-                "\nНе забудь подписать на подарке необходимые данные:\n"
-                f"{await output.get_necessary_data_list()}"
+                "\nНе забудь подписать на подарке необходимые данные:\n" f"{await output.get_necessary_data_list()}"
             )
         elif text == HomeKeyboard.INFO:
             point = await donator.point.first()

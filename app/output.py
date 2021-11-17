@@ -14,7 +14,7 @@ def pretty_child_name(name: str):
 
 async def get_children_list(current_donator: Donator):
     point = await current_donator.point.first()
-    message = f"Список подарков:\n"
+    message = "Список подарков:\n"
     children = await Child.filter(point=point).order_by("id")
 
     for child in children:
