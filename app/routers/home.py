@@ -93,7 +93,7 @@ async def choose_children(event: BotEvent):
 
     response = "Отлично, теперь тебе нужно купить и упаковать подарки для этих людей:\n"
     for child in children:
-        response += f"- {child.name} (#{prettify_child_id(child.id)}) -- {child.gift}\n"
+        response += f"- {output.pretty_child_name(child.name)} (#{prettify_child_id(child.id)}) -- {child.gift}\n"
 
     await event.answer(response)
     await event.answer(
@@ -117,7 +117,7 @@ async def home(event: BotEvent):
         elif text == HomeKeyboard.MY_LIST:
             response = "Список людей, которым тебе нужно купить подарки:\n"
             for i, child in enumerate(children):
-                response += f"{i + 1}. {child.name} (#{prettify_child_id(child.id)}) -- {child.gift}\n"
+                response += f"{i + 1}. {output.pretty_child_name(child.name)} (#{prettify_child_id(child.id)}) -- {child.gift}\n"
             await event.answer(response)
             await event.answer(
                 "\nНе забудь подписать на подарке необходимые данные:\n" f"{await output.get_necessary_data_list()}"
