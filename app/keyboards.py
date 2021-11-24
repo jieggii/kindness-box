@@ -12,7 +12,7 @@ class CancelKeyboard(Keyboard):
 
 
 class HomeNoChildrenKeyboard(Keyboard):
-    EDIT_MY_LIST = "Выбрать детей"
+    EDIT_MY_LIST = "Выбрать людей"
     REJECT_PARTICIPATION = "Отказаться от участия"
 
     def __init__(self):
