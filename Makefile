@@ -1,3 +1,5 @@
+date = $(shell date +"%d-%m-%Y-%H:%M:%S")
+
 fmt:
 	poetry run isort app/
 	poetry run black app/
@@ -5,7 +7,7 @@ fmt:
 lint:
 	poetry run flake8 app/
 
-run-debug:
+run-local:
 	poetry run dotenv -f .env run python -m app
 
 docker-run:
@@ -14,7 +16,9 @@ docker-run:
 docker-build:
 	docker build --tag giving-tuesday-bot .
 
-test-db:
-	poetry run dotenv -f .env run python test_db.py
+backup-db:
+	mkdir -p ./backup/
+	pg_dump --user=bot bot > ./backup/$(date).bak
+
 
 
