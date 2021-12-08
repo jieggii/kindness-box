@@ -19,6 +19,3 @@ docker-build:
 backup-db:
 	mkdir -p ./backup/
 	pg_dump --user=bot bot > ./backup/$(date).bak
-
-
-
