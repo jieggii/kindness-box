@@ -90,8 +90,8 @@ async def choose_self_or_org(event: BotEvent):
 async def set_org_name(event: BotEvent):
     event = SimpleBotEvent(event)
     org_name = event.text
-    if len(org_name) > 40:
-        return event.answer(f"Слишком длинное название организации. {templates.TRY_AGAIN}")
+    if len(org_name) > 100:
+        return await event.answer(f"Слишком длинное название организации. {templates.TRY_AGAIN}")
 
     await request_phone_number(event)
     await FSM.set_state(state=RegistrationState.SET_PHONE_NUMBER, event=event, for_what=FOR_USER)
