@@ -11,3 +11,9 @@
 * [30.12.2021](https://vk.com/wall-200512715_628)
 * [29.12.2021](https://vk.com/wall-200512715_623)
 * [16.12.2021](https://vk.com/wall-200512715_600)
+
+## Ссылки:
+* [givingtuesday.org](https://www.givingtuesday.org/)
+* [givingtuesday.ru](https://www.givingtuesday.ru/)
+* [живойгород.рф](https://живойгород.рф)
+* [Группа благотворительного фонда «Живой Город» ВКонтакте](https://vk.com/cf_livecity)
