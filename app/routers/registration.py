@@ -37,7 +37,9 @@ async def no_state(event: BotEvent):
         )
         await choose_city(event)
     else:
-        logger.warning(f"Got existing donator without state (id={donator.donator_id}), sending him home")
+        logger.warning(
+            f"Got existing donator without state (id={donator.donator_id}), sending him home"
+        )
         await home.send_home(event)
 
 
@@ -62,18 +64,26 @@ async def set_city(event: BotEvent):
             keyboard=kbd.get_keyboard(),
         )
         await FSM.add_data(event, for_what=FOR_USER, state_data={"point_city": city})
-        await FSM.set_state(state=RegistrationState.CHOOSE_SELF_OR_ORG, event=event, for_what=FOR_USER)
+        await FSM.set_state(
+            state=RegistrationState.CHOOSE_SELF_OR_ORG, event=event, for_what=FOR_USER
+        )
     else:
-        await event.answer("Этот город не участвует в акции! Пожалуйста, выбери название города с помощью клавиатуры.")
+        await event.answer(
+            "Этот город не участвует в акции! Пожалуйста, выбери название города с помощью клавиатуры."
+        )
 
 
-@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.CHOOSE_SELF_OR_ORG, for_what=FOR_USER))
+@reg.with_decorator(
+    StateFilter(fsm=FSM, state=RegistrationState.CHOOSE_SELF_OR_ORG, for_what=FOR_USER)
+)
 async def choose_self_or_org(event: BotEvent):
     event = SimpleBotEvent(event)
     text = event.text
     if text == OrgOrSelfChoiceKeyboard.SELF:
         await request_phone_number(event)
-        await FSM.set_state(state=RegistrationState.SET_PHONE_NUMBER, event=event, for_what=FOR_USER)
+        await FSM.set_state(
+            state=RegistrationState.SET_PHONE_NUMBER, event=event, for_what=FOR_USER
+        )
         await FSM.add_data(event=event, for_what=FOR_USER, state_data={"org_name": None})
     elif text == OrgOrSelfChoiceKeyboard.ORG:
         kbd = Keyboard()
@@ -108,7 +118,9 @@ async def request_phone_number(event: BotEvent):
     )
 
 
-@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.SET_PHONE_NUMBER, for_what=FOR_USER))
+@reg.with_decorator(
+    StateFilter(fsm=FSM, state=RegistrationState.SET_PHONE_NUMBER, for_what=FOR_USER)
+)
 async def set_phone_number(event: BotEvent):
     event = SimpleBotEvent(event)
     phone_number = event.text
@@ -117,10 +129,14 @@ async def set_phone_number(event: BotEvent):
         if phone_number == "88005553535":
             await event.answer("Эй, что за приколы?) Давай нормальный номер!")
             return
-        await FSM.add_data(event=event, for_what=FOR_USER, state_data={"phone_number": phone_number})
+        await FSM.add_data(
+            event=event, for_what=FOR_USER, state_data={"phone_number": phone_number}
+        )
         await request_registration_confirmation(event)
     else:
-        await event.answer(f"Эээ... Это что-то не очень похоже на номер телефона. {templates.TRY_AGAIN}")
+        await event.answer(
+            f"Эээ... Это что-то не очень похоже на номер телефона. {templates.TRY_AGAIN}"
+        )
 
 
 async def request_registration_confirmation(event: BotEvent):
@@ -147,7 +163,9 @@ async def request_registration_confirmation(event: BotEvent):
     )
 
 
-@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.CONFIRM_REGISTRATION, for_what=FOR_USER))
+@reg.with_decorator(
+    StateFilter(fsm=FSM, state=RegistrationState.CONFIRM_REGISTRATION, for_what=FOR_USER)
+)
 async def confirm_registration(event: BotEvent):
     event = SimpleBotEvent(event)
     confirmation = await aliases.handle_confirmation(event)
@@ -171,7 +189,9 @@ async def confirm_registration(event: BotEvent):
             point=point,
         )
         await donator.save()
-        logger.info(f"Registered new donator: {name} (vk.com/{user_id}), {point_city}. ID: {donator.donator_id}")
+        logger.info(
+            f"Registered new donator: {name} (vk.com/{user_id}), {point_city}. ID: {donator.donator_id}"
+        )
         await event.answer("Шикарно! Регистрация на акцию пройдена успешно.")
         await home.send_home(event)
         await FSM.set_state(state=HomeState.HOME, event=event, for_what=FOR_USER)

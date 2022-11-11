@@ -20,7 +20,9 @@ async def send_confirmation(
 
 async def handle_confirmation(
     event: SimpleBotEvent,
-) -> Optional[bool]:  # todo?: вместо этого писать проверки на yes / no прямо в коде, так будет очевиднее
+) -> Optional[
+    bool
+]:  # todo?: вместо этого писать проверки на yes / no прямо в коде, так будет очевиднее
     text = event.text
     if text == YesNoKeyboard.YES:
         return True

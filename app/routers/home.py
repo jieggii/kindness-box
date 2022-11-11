@@ -4,10 +4,10 @@ from vkwave.bots import BotEvent, DefaultRouter, Keyboard, SimpleBotEvent
 from vkwave.bots.fsm import ForWhat, StateFilter
 
 from app import aliases, db, output, templates, user_input
-from app.person_id import parse_pretty_person_id, prettify_person_id
-from app.db.models import Person, Donator
+from app.db.models import Donator, Person
 from app.fsm import FSM, HomeState
 from app.keyboards import CancelKeyboard, HomeKeyboard, HomeNoPersonsKeyboard
+from app.person_id import parse_pretty_person_id, prettify_person_id
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,9 @@ async def choose_persons(event: BotEvent):
     pretty_person_ids = user_input.get_list_of_person_ids(text)
 
     if not pretty_person_ids:
-        await event.answer("Я не понимаю тебя! Перечисли номера людей через запятую.\n" "Например: 3, 11, 12")
+        await event.answer(
+            "Я не понимаю тебя! Перечисли номера людей через запятую.\n" "Например: 3, 11, 12"
+        )
         return
 
     if len(pretty_person_ids) > 5:
@@ -76,7 +78,9 @@ async def choose_persons(event: BotEvent):
     persons = [await Person.filter(id=person_id).first() for person_id in person_ids]
 
     if not all(persons):
-        await event.answer(f"Одного или несколько человек из выбранных тобой не существует. {templates.TRY_AGAIN}")
+        await event.answer(
+            f"Одного или несколько человек из выбранных тобой не существует. {templates.TRY_AGAIN}"
+        )
         return
 
     donator = await Donator.filter(user_id=event.from_id).first()
@@ -119,7 +123,8 @@ async def home(event: BotEvent):
                 response += f"{i + 1}. {output.pretty_person_name(person.name)} (#{prettify_person_id(person.person_id)}) -- {person.gift}\n"
             await event.answer(response)
             await event.answer(
-                "\nНе забудь подписать на подарке необходимые данные:\n" f"{await output.get_necessary_data_list()}"
+                "\nНе забудь подписать на подарке необходимые данные:\n"
+                f"{await output.get_necessary_data_list()}"
             )
         elif text == HomeKeyboard.INFO:
             point = await donator.point.first()
@@ -176,15 +181,21 @@ async def confirm_rejection(event: BotEvent):
         await send_home(event)
 
 
-@reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.CONFIRM_I_BROUGHT_GIFTS, for_what=FOR_USER))
+@reg.with_decorator(
+    StateFilter(fsm=FSM, state=HomeState.CONFIRM_I_BROUGHT_GIFTS, for_what=FOR_USER)
+)
 async def confirm_i_brought_gifts(event: BotEvent):
     event = SimpleBotEvent(event)
     confirmation = await aliases.handle_confirmation(event)
     if confirmation is True:
         kbd = Keyboard()
-        await event.answer("Ура! Спасибо огромное за участие в акции <3", keyboard=kbd.get_empty_keyboard())
+        await event.answer(
+            "Ура! Спасибо огромное за участие в акции <3", keyboard=kbd.get_empty_keyboard()
+        )
         await Donator.filter(user_id=event.from_id).update(brought_gifts=True)
-        await FSM.set_state(state=HomeState.FINISH, event=event, for_what=FOR_USER)  # todo после перезапуска посмотреть
+        await FSM.set_state(
+            state=HomeState.FINISH, event=event, for_what=FOR_USER
+        )  # todo после перезапуска посмотреть
 
     elif confirmation is False:
         await send_home(event)
