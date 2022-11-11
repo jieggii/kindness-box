@@ -1,6 +1,8 @@
-.idea/
+.idea
 todo.txt
 *.env
-__pypackages__/
+.pdm.toml
+__pypackages__
+__pycache__
 test.py
 test_db.py
