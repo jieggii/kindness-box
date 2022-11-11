@@ -37,7 +37,7 @@ async def no_state(event: BotEvent):
         )
         await choose_city(event)
     else:
-        logger.warning(f"Got existing donator without state (id={donator.id}), sending him home")
+        logger.warning(f"Got existing donator without state (id={donator.donator_id}), sending him home")
         await home.send_home(event)
 
 
@@ -171,7 +171,7 @@ async def confirm_registration(event: BotEvent):
             point=point,
         )
         await donator.save()
-        logger.info(f"Registered new donator: {name} (vk.com/{user_id}), {point_city}. ID: {donator.id}")
+        logger.info(f"Registered new donator: {name} (vk.com/{user_id}), {point_city}. ID: {donator.donator_id}")
         await event.answer("Шикарно! Регистрация на акцию пройдена успешно.")
         await home.send_home(event)
         await FSM.set_state(state=HomeState.HOME, event=event, for_what=FOR_USER)

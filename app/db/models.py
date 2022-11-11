@@ -9,27 +9,31 @@ class PointCity(str, Enum):
     PETROZAVODSK = "Петрозаводск"
     MUEZERKA = "Муезерка"
 
+# todo
+# city -> locality?
+# id -> smth_id
+
 
 class Point(Model):
     class Meta:
         table = "points"
 
-    id = fields.IntField(pk=True)
-    city = fields.CharEnumField(enum_type=PointCity, max_length=255)
+    point_id = fields.IntField(pk=True)
+    locality = fields.CharEnumField(enum_type=PointCity, max_length=255)
     address = fields.CharField(max_length=1000)
 
     def __repr__(self):
         return self.__str__()
 
     def __str__(self):
-        return f"Point({self.city}, id={self.id})"
+        return f"Point({self.locality}, point_id={self.point_id})"
 
 
 class Donator(Model):
     class Meta:
         table = "donators"
 
-    id = fields.IntField(pk=True)
+    donator_id = fields.IntField(pk=True)
     name = fields.CharField(max_length=255)
     user_id = fields.IntField()
     org_name = fields.CharField(max_length=255, null=True)
@@ -41,14 +45,14 @@ class Donator(Model):
         return self.__str__()
 
     def __str__(self):
-        return f"Donator({self.name}, id={self.id})"
+        return f"Donator({self.name}, donator_id={self.donator_id})"
 
 
-class Child(Model):
+class Person(Model):
     class Meta:
-        table = "children"
+        table = "persons"
 
-    id = fields.IntField(pk=True)
+    person_id = fields.IntField(pk=True)
     name = fields.CharField(max_length=255)
     age = fields.IntField()
     gift = fields.CharField(max_length=255)
@@ -60,4 +64,4 @@ class Child(Model):
         return self.__str__()
 
     def __str__(self):
-        return f"Child({self.name}, id={self.id})"
+        return f"Person({self.name}, person_id={self.person_id})"

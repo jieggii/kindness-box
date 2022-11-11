@@ -4,10 +4,10 @@ from vkwave.bots import BotEvent, DefaultRouter, Keyboard, SimpleBotEvent
 from vkwave.bots.fsm import ForWhat, StateFilter
 
 from app import aliases, db, output, templates, user_input
-from app.child_id import parse_pretty_child_id, prettify_child_id
-from app.db.models import Child, Donator
+from app.person_id import parse_pretty_person_id, prettify_person_id
+from app.db.models import Person, Donator
 from app.fsm import FSM, HomeState
-from app.keyboards import CancelKeyboard, HomeKeyboard, HomeNoChildrenKeyboard
+from app.keyboards import CancelKeyboard, HomeKeyboard, HomeNoPersonsKeyboard
 
 logger = logging.getLogger(__name__)
 
@@ -28,20 +28,20 @@ async def send_home(event: BotEvent):
 
     await FSM.set_state(state=HomeState.HOME, event=event, for_what=FOR_USER)
 
-    if await db.util.donator_has_children(donator):
+    if await db.util.donator_has_persons(donator):
         kbd = HomeKeyboard()
         await event.answer(templates.MAIN_MENU_CHOOSE_ACTION_USING_KBD, keyboard=kbd.get_keyboard())
     else:
-        kbd = HomeNoChildrenKeyboard()
+        kbd = HomeNoPersonsKeyboard()
         await event.answer(templates.MAIN_MENU_CHOOSE_ACTION_USING_KBD, keyboard=kbd.get_keyboard())
 
 
-async def send_all_children_list(event: BotEvent):
+async def send_all_persons_list(event: BotEvent):
     event = SimpleBotEvent(event)
     donator = await db.util.get_donator(event.from_id)
 
-    await FSM.set_state(state=HomeState.CHOOSE_CHILDREN, event=event, for_what=FOR_USER)
-    await event.answer(await output.get_children_list(donator))
+    await FSM.set_state(state=HomeState.CHOOSE_PERSONS, event=event, for_what=FOR_USER)
+    await event.answer(await output.get_persons_list(donator))
 
     kbd = CancelKeyboard()
     await event.answer(
@@ -53,8 +53,8 @@ async def send_all_children_list(event: BotEvent):
     )
 
 
-@reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.CHOOSE_CHILDREN, for_what=FOR_USER))
-async def choose_children(event: BotEvent):
+@reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.CHOOSE_PERSONS, for_what=FOR_USER))
+async def choose_persons(event: BotEvent):
     event = SimpleBotEvent(event)
     text = event.text
 
@@ -62,38 +62,38 @@ async def choose_children(event: BotEvent):
         await send_home(event)
         return
 
-    pretty_child_ids = user_input.get_list_of_child_ids(text)
+    pretty_person_ids = user_input.get_list_of_person_ids(text)
 
-    if not pretty_child_ids:
+    if not pretty_person_ids:
         await event.answer("Я не понимаю тебя! Перечисли номера людей через запятую.\n" "Например: 3, 11, 12")
         return
 
-    if len(pretty_child_ids) > 5:
+    if len(pretty_person_ids) > 5:
         await event.answer(f"Нельзя выбрать больше 5 человек. {templates.TRY_AGAIN}")
         return
 
-    child_ids = [parse_pretty_child_id(pretty_id) for pretty_id in pretty_child_ids]
-    children = [await Child.filter(id=child_id).first() for child_id in child_ids]
+    person_ids = [parse_pretty_person_id(pretty_id) for pretty_id in pretty_person_ids]
+    persons = [await Person.filter(id=person_id).first() for person_id in person_ids]
 
-    if not all(children):
+    if not all(persons):
         await event.answer(f"Одного или несколько человек из выбранных тобой не существует. {templates.TRY_AGAIN}")
         return
 
     donator = await Donator.filter(user_id=event.from_id).first()
 
-    if await db.util.at_least_one_child_has_donator(donator, children):
+    if await db.util.at_least_one_person_has_donator(donator, persons):
         await event.answer(
             f"Одному или нескольким людям из выбранных тобой уже кто-то покупает подарок. {templates.TRY_AGAIN}"
         )
         return
 
-    await Child.filter(donator=donator).update(donator_id=None)  # removing previous assignations
-    for child in children:  # assigning donator to new children
-        await Child.filter(id=child.id).update(donator=donator)
+    await Person.filter(donator=donator).update(donator_id=None)  # removing previous assignations
+    for person in persons:  # assigning donator to new persons
+        await Person.filter(id=person.person_id).update(donator=donator)
 
     response = "Отлично, теперь тебе нужно купить и упаковать подарки для этих людей:\n"
-    for child in children:
-        response += f"- {output.pretty_child_name(child.name)} (#{prettify_child_id(child.id)}) -- {child.gift}\n"
+    for person in persons:
+        response += f"- {output.pretty_person_name(person.name)} (#{prettify_person_id(person.person_id)}) -- {person.gift}\n"
 
     await event.answer(response)
     await event.answer(
@@ -108,16 +108,15 @@ async def home(event: BotEvent):
     event = SimpleBotEvent(event)
     text = event.text
     donator = await db.util.get_donator(event.user_id)
-    children = await Child.filter(donator=donator)
+    persons = await Person.filter(donator=donator)
 
-    if children:
+    if persons:
         if text == HomeKeyboard.EDIT_MY_LIST:
-            await send_all_children_list(event)
-
+            await send_all_persons_list(event)
         elif text == HomeKeyboard.MY_LIST:
             response = "Список людей, которым тебе нужно купить подарки:\n"
-            for i, child in enumerate(children):
-                response += f"{i + 1}. {output.pretty_child_name(child.name)} (#{prettify_child_id(child.id)}) -- {child.gift}\n"
+            for i, person in enumerate(persons):
+                response += f"{i + 1}. {output.pretty_person_name(person.name)} (#{prettify_person_id(person.person_id)}) -- {person.gift}\n"
             await event.answer(response)
             await event.answer(
                 "\nНе забудь подписать на подарке необходимые данные:\n" f"{await output.get_necessary_data_list()}"
@@ -129,7 +128,6 @@ async def home(event: BotEvent):
                 "Обрати внимание: на подарке обязательно должны быть подписаны:\n"
                 f"{await output.get_necessary_data_list()}"
             )
-
         elif text == HomeKeyboard.I_BROUGHT_GIFTS:
             await aliases.send_confirmation(
                 event,
@@ -139,17 +137,14 @@ async def home(event: BotEvent):
 
         elif text == HomeKeyboard.REJECT_PARTICIPATION:
             await send_rejection_confirmation(event)
-
         else:
             await event.answer(templates.INVALID_OPTION)
 
     else:
-        if text == HomeNoChildrenKeyboard.EDIT_MY_LIST:
-            await send_all_children_list(event)
-
-        elif text == HomeNoChildrenKeyboard.REJECT_PARTICIPATION:
+        if text == HomeNoPersonsKeyboard.EDIT_MY_LIST:
+            await send_all_persons_list(event)
+        elif text == HomeNoPersonsKeyboard.REJECT_PARTICIPATION:
             await send_rejection_confirmation(event)
-
         else:
             await event.answer(templates.INVALID_OPTION)
 

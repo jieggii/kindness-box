@@ -1,5 +1,5 @@
-from app.child_id import prettify_child_id
-from app.db.models import Child, Donator
+from app.person_id import prettify_person_id
+from app.db.models import Person, Donator
 from app.keyboards import HomeKeyboard
 
 _CHECKBOX_CHECKED = "[ X ]"
@@ -7,23 +7,23 @@ _CHECKBOX_UNCHECKED = "[&#8195;]"
 _nl = "\n"
 
 
-def pretty_child_name(name: str):
+def pretty_person_name(name: str):
     first_name, last_name = name.split()
     return f"{first_name} {last_name[0]}."
 
 
-async def get_children_list(current_donator: Donator):
+async def get_persons_list(current_donator: Donator):
     point = await current_donator.point.first()
     message = "Список подарков:\n"
-    children = await Child.filter(point=point).order_by("id")
+    persons = await Person.filter(point=point).order_by("id")
 
-    for child in children:
-        donator = await child.donator
+    for person in persons:
+        donator = await person.donator
         if donator:
             message += f"{_CHECKBOX_CHECKED} "
         else:
             message += f"{_CHECKBOX_UNCHECKED} "
-        message += f"#{prettify_child_id(child.id)} {pretty_child_name(child.name)} {child.age} лет "
+        message += f"#{prettify_person_id(person.person_id)} {pretty_person_name(person.name)} {person.age} лет "
 
         if donator:
             if donator == current_donator:
@@ -31,7 +31,7 @@ async def get_children_list(current_donator: Donator):
             else:
                 message += f"(подарок уже покупает @id{donator.user_id}({donator.name})) "
 
-        message += f"-- {child.gift}\n\n"
+        message += f"-- {person.gift}\n\n"
 
     return message
 
