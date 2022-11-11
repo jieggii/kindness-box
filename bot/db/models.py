@@ -22,7 +22,7 @@ class Point(Model):
         return self.__str__()
 
     def __str__(self):
-        return f"Point({self.locality}, point_id={self.point_id})"
+        return f"Point({self.point_id}, {self.locality})"
 
 
 class Donator(Model):
@@ -35,13 +35,13 @@ class Donator(Model):
     org_name = fields.CharField(max_length=255, null=True)
     phone_number = fields.CharField(max_length=255)
     brought_gifts = fields.BooleanField(default=False)
-    point = fields.ForeignKeyField("models.Point", related_name="point_id")  # todo?
+    point = fields.ForeignKeyField("models.Point", related_name="point_id")
 
     def __repr__(self):
         return self.__str__()
 
     def __str__(self):
-        return f"Donator({self.name}, donator_id={self.donator_id})"
+        return f"Donator({self.donator_id}, {self.name})"
 
 
 class Person(Model):
@@ -53,11 +53,11 @@ class Person(Model):
     age = fields.IntField()
     gift = fields.CharField(max_length=255)
 
-    donator = fields.ForeignKeyField("models.Donator", on_delete=fields.SET_NULL, null=True)
-    point = fields.ForeignKeyField("models.Point")
+    donator = fields.ForeignKeyField("models.Donator", related_name="donator_id", on_delete=fields.SET_NULL, null=True)
+    point = fields.ForeignKeyField("models.Point", related_name="point_id")
 
     def __repr__(self):
         return self.__str__()
 
     def __str__(self):
-        return f"Person({self.name}, person_id={self.person_id})"
+        return f"Person({self.person_id}, {self.name})"
