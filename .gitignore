@@ -2,6 +2,7 @@
 todo.txt
 *.env
 .pdm.toml
+pdm.lock
 __pypackages__
 __pycache__
 test.py
