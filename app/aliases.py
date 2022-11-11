@@ -1,6 +1,6 @@
-from typing import Callable, Optional
+from typing import Optional
 
-from vkwave.bots import Keyboard, SimpleBotEvent
+from vkwave.bots import SimpleBotEvent
 from vkwave.bots.fsm import ForWhat, State
 
 from app.fsm import FSM
