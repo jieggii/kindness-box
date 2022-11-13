@@ -19,7 +19,7 @@ reg = router.registrar
 
 async def send_home(event: BotEvent):
     event = SimpleBotEvent(event)
-    donator = await Donator.filter(user_id=event.from_id).first()
+    donator = await Donator.filter(vk_user_id=event.from_id).first()
 
     if donator.brought_gifts:
         logger.warning("Got message from brought_gifts==True donator. Setting state FINISH")
@@ -75,7 +75,7 @@ async def choose_persons(event: BotEvent):
         return
 
     person_ids = [parse_pretty_person_id(pretty_id) for pretty_id in pretty_person_ids]
-    persons = [await Person.filter(id=person_id).first() for person_id in person_ids]
+    persons = [await Person.filter(person_id=person_id).first() for person_id in person_ids]
 
     if not all(persons):
         await event.answer(
@@ -83,7 +83,7 @@ async def choose_persons(event: BotEvent):
         )
         return
 
-    donator = await Donator.filter(user_id=event.from_id).first()
+    donator = await Donator.filter(vk_user_id=event.from_id).first()
 
     if await db.util.at_least_one_person_has_donator(donator, persons):
         await event.answer(
@@ -93,7 +93,7 @@ async def choose_persons(event: BotEvent):
 
     await Person.filter(donator=donator).update(donator_id=None)  # removing previous assignations
     for person in persons:  # assigning donator to new persons
-        await Person.filter(id=person.person_id).update(donator=donator)
+        await Person.filter(person_id=person.person_id).update(donator=donator)
 
     response = "Отлично, теперь тебе нужно купить и упаковать подарки для этих людей:\n"
     for person in persons:
@@ -128,7 +128,7 @@ async def home(event: BotEvent):
             )
         elif text == HomeKeyboard.INFO:
             point = await donator.point.first()
-            await event.answer(f"Отнести подарки в городе {point.city} можно {point.address}.\n\n")
+            await event.answer(f"Отнести подарки в городе {point.locality} можно {point.address}.\n\n")
             await event.answer(
                 "Обрати внимание: на подарке обязательно должны быть подписаны:\n"
                 f"{await output.get_necessary_data_list()}"
@@ -167,7 +167,7 @@ async def confirm_rejection(event: BotEvent):
     event = SimpleBotEvent(event)
     confirmation = await aliases.handle_confirmation(event)
     if confirmation is True:
-        donator = await Donator.filter(user_id=event.from_id).first()
+        donator = await Donator.filter(vk_user_id=event.from_id).first()
         await donator.delete()
 
         kbd = Keyboard()
@@ -192,7 +192,7 @@ async def confirm_i_brought_gifts(event: BotEvent):
         await event.answer(
             "Ура! Спасибо огромное за участие в акции <3", keyboard=kbd.get_empty_keyboard()
         )
-        await Donator.filter(user_id=event.from_id).update(brought_gifts=True)
+        await Donator.filter(vk_user_id=event.from_id).update(brought_gifts=True)
         await FSM.set_state(
             state=HomeState.FINISH, event=event, for_what=FOR_USER
         )  # todo после перезапуска посмотреть

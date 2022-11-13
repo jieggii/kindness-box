@@ -2,7 +2,7 @@ from vkwave.bots.fsm import FiniteStateMachine, State
 
 
 class RegistrationState:
-    SET_CITY = State("SET_CITY")
+    SET_LOCALITY = State("SET_LOCALITY")
 
     CHOOSE_SELF_OR_ORG = State("CHOOSE_SELF_OR_ORG")
     SET_ORG_NAME = State("SET_ORG_NAME")

@@ -15,7 +15,7 @@ def pretty_person_name(name: str):
 async def get_persons_list(current_donator: Donator):
     point = await current_donator.point.first()
     message = "Список подарков:\n"
-    persons = await Person.filter(point=point).order_by("id")
+    persons = await Person.filter(point=point).order_by("person_id")
 
     for person in persons:
         donator = await person.donator

@@ -1,6 +1,6 @@
 from vkwave.bots import ButtonColor, Keyboard
 
-from app.db.models import PointCity
+from app.db.models import PointLocality
 
 
 class CancelKeyboard(Keyboard):
@@ -53,7 +53,7 @@ class YesNoKeyboard(Keyboard):
 class ChooseCityKeyboard(Keyboard):
     def __init__(self):
         super(ChooseCityKeyboard, self).__init__()
-        for i, city in enumerate(PointCity):
+        for i, city in enumerate(PointLocality):
             self.add_text_button(text=city, color=ButtonColor.SECONDARY)
             if (i + 1) % 2 == 0:
                 self.add_row()

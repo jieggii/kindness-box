@@ -4,7 +4,7 @@ from vkwave.bots import BotEvent, DefaultRouter, Keyboard, SimpleBotEvent
 from vkwave.bots.fsm import NO_STATE, ForWhat, StateFilter
 
 from app import aliases, api_util, db, templates, user_input
-from app.db.models import Donator, Point, PointCity
+from app.db.models import Donator, Point, PointLocality
 from app.fsm import FSM, HomeState, RegistrationState
 from app.keyboards import ChooseCityKeyboard, OrgOrSelfChoiceKeyboard
 from app.routers import home
@@ -29,7 +29,7 @@ async def no_state(event: BotEvent):
         name = user_data.first_name
 
         await event.answer(
-            f"Привет, {name}! Я Поликарп -- бот для акции <<Щедрый Вторник>>.\n\n"
+            f"Привет, {name}! Я Щедрый Бот -- бот для акции <<Щедрый Вторник>>.\n\n"
             "С моей помощью ты сможешь выбрать одного или нескольких человек с "
             "ограниченными возможностями, которым будешь дарить подарок :)\n\n"
             f"Внимание! Выбранные подарки будет необходимо принести до {templates.DEADLINE}.\n"
@@ -38,7 +38,7 @@ async def no_state(event: BotEvent):
         await choose_city(event)
     else:
         logger.warning(
-            f"Got existing donator without state (id={donator.donator_id}), sending him home"
+            f"Got existing donator without state ({donator}), sending him home"
         )
         await home.send_home(event)
 
@@ -50,20 +50,20 @@ async def choose_city(event: BotEvent):
         "Выбери город, в котором ты будешь принимать участие в акции:",
         keyboard=kbd.get_keyboard(),
     )
-    await FSM.set_state(state=RegistrationState.SET_CITY, event=event, for_what=FOR_USER)
+    await FSM.set_state(state=RegistrationState.SET_LOCALITY, event=event, for_what=FOR_USER)
 
 
-@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.SET_CITY, for_what=FOR_USER))
+@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.SET_LOCALITY, for_what=FOR_USER))
 async def set_city(event: BotEvent):
     event = SimpleBotEvent(event)
-    city = event.text
-    if city in iter(PointCity):
+    locality = event.text
+    if locality in iter(PointLocality):
         kbd = OrgOrSelfChoiceKeyboard()
         await event.answer(
             "Ты будешь участвовать в акции от своего имени, или от имени организации?",
             keyboard=kbd.get_keyboard(),
         )
-        await FSM.add_data(event, for_what=FOR_USER, state_data={"point_city": city})
+        await FSM.add_data(event, for_what=FOR_USER, state_data={"point_locality": locality})
         await FSM.set_state(
             state=RegistrationState.CHOOSE_SELF_OR_ORG, event=event, for_what=FOR_USER
         )
@@ -143,12 +143,12 @@ async def request_registration_confirmation(event: BotEvent):
     event = SimpleBotEvent(event)
     fsm_data = await FSM.get_data(event=event, for_what=FOR_USER)
 
-    point_city = fsm_data["point_city"]
+    point_locality = fsm_data["point_locality"]
     org_name = fsm_data["org_name"]
     phone_number = fsm_data["phone_number"]
 
     response = "Давай проверим данные:\n"
-    response += f"Город: {point_city}\n"
+    response += f"Населенный пункт: {point_locality}\n"
     if org_name:
         response += f"Организация: <<{org_name}>>\n"
     else:
@@ -172,7 +172,7 @@ async def confirm_registration(event: BotEvent):
 
     if confirmation is True:
         fsm_data = await FSM.get_data(event=event, for_what=FOR_USER)
-        point_city = PointCity(fsm_data["point_city"])
+        point_locality = PointLocality(fsm_data["point_locality"])
         org_name = fsm_data["org_name"]
         phone_number = fsm_data["phone_number"]
 
@@ -180,17 +180,17 @@ async def confirm_registration(event: BotEvent):
         name = f"{user_data.first_name} {user_data.last_name}"
         user_id = event.from_id
 
-        point = await Point.filter(city=point_city).first()
+        point = await Point.filter(locality=point_locality).first()
         donator = await Donator.create(
             name=name,
-            user_id=user_id,
+            vk_user_id=user_id,
             org_name=org_name,
             phone_number=phone_number,
             point=point,
         )
         await donator.save()
         logger.info(
-            f"Registered new donator: {name} (vk.com/{user_id}), {point_city}. ID: {donator.donator_id}"
+            f"Registered new donator: {name} (vk.com/{user_id}), {point_locality}. ID: {donator.donator_id}"
         )
         await event.answer("Шикарно! Регистрация на акцию пройдена успешно.")
         await home.send_home(event)

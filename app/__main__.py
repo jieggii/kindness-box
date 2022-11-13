@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import sys
 
 import uvloop
 from vkwave.bots import SimpleLongPollBot
@@ -13,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 
 uvloop.install()
 
-loop = asyncio.get_event_loop()
+loop = asyncio.get_event_loop()  # todo: .new_event_loop()?
 loop.run_until_complete(db.init())
 
 bot = SimpleLongPollBot(config.TOKENS, config.GROUP_ID)
@@ -24,6 +25,5 @@ bot.dispatcher.add_router(home.router)
 
 try:
     bot.run_forever(ignore_errors=True)
-
 except KeyboardInterrupt:
-    exit()
+    sys.exit()
