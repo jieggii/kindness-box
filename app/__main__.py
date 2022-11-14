@@ -14,7 +14,8 @@ logging.basicConfig(level=logging.INFO)
 
 uvloop.install()
 
-loop = asyncio.get_event_loop()  # todo: .new_event_loop()?
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 loop.run_until_complete(db.init())
 
 bot = SimpleLongPollBot(config.TOKENS, config.GROUP_ID)
