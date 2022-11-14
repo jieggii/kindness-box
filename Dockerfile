@@ -8,4 +8,6 @@ RUN pdm config check_update false && pdm config python.use_venv false
 COPY pyproject.toml pdm.lock* .env  ./
 COPY app app/
 
-ENTRYPOINT ["pdm", "run", "python", "-m", "dotenv", "-f", ".env", "run", "python", "-m", "app"]
+RUN pdm install --prod
+
+ENTRYPOINT ["pdm", "run", "dotenv", "-f", ".env", "run", "python", "-m", "app"]
