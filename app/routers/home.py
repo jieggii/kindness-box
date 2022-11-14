@@ -193,9 +193,7 @@ async def confirm_i_brought_gifts(event: BotEvent):
             "Ура! Спасибо огромное за участие в акции <3", keyboard=kbd.get_empty_keyboard()
         )
         await Donator.filter(vk_user_id=event.from_id).update(brought_gifts=True)
-        await FSM.set_state(
-            state=HomeState.FINISH, event=event, for_what=FOR_USER
-        )
+        await FSM.set_state(state=HomeState.FINISH, event=event, for_what=FOR_USER)
 
     elif confirmation is False:
         await send_home(event)
