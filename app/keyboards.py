@@ -67,3 +67,9 @@ class OrgOrSelfChoiceKeyboard(Keyboard):
         super(OrgOrSelfChoiceKeyboard, self).__init__()
         self.add_text_button(text=self.SELF, color=ButtonColor.PRIMARY)
         self.add_text_button(text=self.ORG, color=ButtonColor.SECONDARY)
+
+
+class StartKeyboard(Keyboard):
+    def __init__(self):
+        super(StartKeyboard, self).__init__()
+        self.add_text_button(text="Начать", color=ButtonColor.PRIMARY)

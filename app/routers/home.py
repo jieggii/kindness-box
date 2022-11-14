@@ -6,7 +6,7 @@ from vkwave.bots.fsm import ForWhat, StateFilter
 from app import aliases, db, output, templates, user_input
 from app.db.models import Donator, Person
 from app.fsm import FSM, HomeState
-from app.keyboards import CancelKeyboard, HomeKeyboard, HomeNoPersonsKeyboard
+from app.keyboards import CancelKeyboard, HomeKeyboard, HomeNoPersonsKeyboard, StartKeyboard
 from app.person_id import parse_pretty_person_id, prettify_person_id
 
 logger = logging.getLogger(__name__)
@@ -166,17 +166,15 @@ async def send_rejection_confirmation(event: SimpleBotEvent):
 async def confirm_rejection(event: BotEvent):
     event = SimpleBotEvent(event)
     confirmation = await aliases.handle_confirmation(event)
+    # проверки именно такие, потому что confirmation может также быть равен None
     if confirmation is True:
         donator = await Donator.filter(vk_user_id=event.from_id).first()
         await donator.delete()
-
-        kbd = Keyboard()
         await event.answer(
-            "Хорошо! Если передумаешь -- смело пиши сюда снова :)",
-            keyboard=kbd.get_empty_keyboard(),
+            "Хорошо! Если передумаешь -- смело пиши сюда снова",
+            keyboard=StartKeyboard().get_keyboard(),
         )
         await FSM.finish(event=event, for_what=FOR_USER)
-
     elif confirmation is False:
         await send_home(event)
 

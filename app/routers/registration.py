@@ -192,7 +192,7 @@ async def confirm_registration(event: BotEvent):
         logger.info(
             f"Registered new donator: {name} (vk.com/{user_id}), {point_locality}. ID: {donator.donator_id}"
         )
-        await event.answer("Шикарно! Регистрация на акцию пройдена успешно.")
+        await event.answer("Чудесно! Регистрация на акцию пройдена успешно.")
         await home.send_home(event)
         await FSM.set_state(state=HomeState.HOME, event=event, for_what=FOR_USER)
 
