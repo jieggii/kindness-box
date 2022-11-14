@@ -6,8 +6,9 @@ DEBUG_ENV = debug.env
 todo:
 	@echo "TODOs in the source code:"
 	@grep -rn "todo" ./app/
+	@echo
 	@echo "TODOs in the todo.txt file:"
-	@cat todo
+	@cat todo.txt
 
 .PHONY: fmt
 fmt:
