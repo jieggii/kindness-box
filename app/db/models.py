@@ -53,9 +53,7 @@ class Person(Model):
     age = fields.IntField()
     gift = fields.CharField(max_length=255)
 
-    donator = fields.ForeignKeyField(
-        "models.Donator", on_delete=fields.SET_NULL, null=True
-    )
+    donator = fields.ForeignKeyField("models.Donator", on_delete=fields.SET_NULL, null=True)
     point = fields.ForeignKeyField("models.Point")
 
     def __repr__(self):

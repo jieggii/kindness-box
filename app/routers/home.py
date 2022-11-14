@@ -128,7 +128,9 @@ async def home(event: BotEvent):
             )
         elif text == HomeKeyboard.INFO:
             point = await donator.point.first()
-            await event.answer(f"Отнести подарки в городе {point.locality} можно {point.address}.\n\n")
+            await event.answer(
+                f"Отнести подарки в городе {point.locality} можно {point.address}.\n\n"
+            )
             await event.answer(
                 "Обрати внимание: на подарке обязательно должны быть подписаны:\n"
                 f"{await output.get_necessary_data_list()}"

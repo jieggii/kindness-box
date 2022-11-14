@@ -37,9 +37,7 @@ async def no_state(event: BotEvent):
         )
         await choose_city(event)
     else:
-        logger.warning(
-            f"Got existing donator without state ({donator}), sending him home"
-        )
+        logger.warning(f"Got existing donator without state ({donator}), sending him home")
         await home.send_home(event)
 
 
