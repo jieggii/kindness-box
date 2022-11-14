@@ -1,9 +1,7 @@
-.idea
-todo.txt
-*.env
+__pycache__
+__pypackages__
 .pdm.toml
 pdm.lock
-__pypackages__
-__pycache__
-test.py
-test_db.py
+*.env
+todo.txt
+.idea
