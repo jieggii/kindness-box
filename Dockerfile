@@ -1,10 +1,11 @@
-FROM python:3.9
-RUN pip install poetry==1.1.11
+FROM python:3.10
 
-WORKDIR /bot/
-COPY pyproject.toml poetry.lock* /bot/
-RUN poetry config virtualenvs.create false && poetry install --no-dev --no-interaction --no-ansi
+WORKDIR /kindness-box/
 
-COPY . /bot/
+RUN pip install pdm==2.1.4
+RUN pdm config check_update false && pdm config python.use_venv false
 
-ENTRYPOINT ["dotenv", "-f", ".env", "run", "python", "-m", "app"]
+COPY pyproject.toml pdm.lock* gunicorn.conf.py .env  ./
+COPY app app/
+
+ENTRYPOINT ["pdm", "run", "dotenv", "-f", ".env", "run", "python", "-m", "app"]
