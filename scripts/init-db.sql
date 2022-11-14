@@ -41,7 +41,8 @@ create table persons
     age integer not null,
     gift text not null,
     donator_id integer,
-    constraint persons_fk_donator_id foreign key (donator_id) references donators (donator_id),
+    constraint persons_fk_donator_id foreign key (donator_id) references donators (donator_id) on delete set null,
+
     point_id integer not null,
     constraint persons_fk_point_id foreign key (point_id) references points (point_id)
 );
