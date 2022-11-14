@@ -46,9 +46,9 @@ async def send_all_persons_list(event: BotEvent):
     kbd = CancelKeyboard()
     await event.answer(
         "Перечисли через запятую идентификационные номера (число после символа <<#>>) "
-        "до 5 человек, которым будешь покупать подарок"
+        "от 1 до 5 человек, которым будешь покупать подарок"
         f"{f' от имени организации <<{donator.org_name}>>.' if donator.org_name else '.'}\n"
-        "Например: 3, 11, 12",
+        "Например: 105, 107, 103",
         keyboard=kbd.get_keyboard(),
     )
 
@@ -66,12 +66,12 @@ async def choose_persons(event: BotEvent):
 
     if not pretty_person_ids:
         await event.answer(
-            "Я не понимаю тебя! Перечисли номера людей через запятую.\n" "Например: 3, 11, 12"
+            "Я не понимаю тебя! Перечисли номера людей через запятую.\n" "Например: 105, 107, 103"
         )
         return
 
     if len(pretty_person_ids) > 5:
-        await event.answer(f"Нельзя выбрать больше 5 человек. {templates.TRY_AGAIN}")
+        await event.answer(f"Нельзя выбрать больше 5-и человек. {templates.TRY_AGAIN}")
         return
 
     person_ids = [parse_pretty_person_id(pretty_id) for pretty_id in pretty_person_ids]
@@ -101,7 +101,7 @@ async def choose_persons(event: BotEvent):
 
     await event.answer(response)
     await event.answer(
-        "Чтобы узнать подробную информацию о том, куда, "
+        "Чтобы узнать подробную информацию о том куда, "
         f"когда и в каком виде приносить подарок, нажми на кнопку <<{HomeKeyboard.INFO}>>"
     )
     await send_home(event)
@@ -195,7 +195,7 @@ async def confirm_i_brought_gifts(event: BotEvent):
         await Donator.filter(vk_user_id=event.from_id).update(brought_gifts=True)
         await FSM.set_state(
             state=HomeState.FINISH, event=event, for_what=FOR_USER
-        )  # todo после перезапуска посмотреть
+        )
 
     elif confirmation is False:
         await send_home(event)
