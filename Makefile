@@ -4,7 +4,10 @@ DEBUG_ENV = debug.env
 
 .PHONY: todo
 todo:
-	grep -rn "todo" ./app/
+	@echo "TODOs in the source code:"
+	@grep -rn "todo" ./app/
+	@echo "TODOs in the todo.txt file:"
+	@cat todo
 
 .PHONY: fmt
 fmt:
@@ -18,12 +21,13 @@ lint:
 start-debug:
 	pdm run dotenv -f $(DEBUG_ENV) run python -m app
 
-#docker-run:
-#	docker run -d --network=host giving-tuesday-bot:latest
-#
-#docker-build:
-#	docker build --tag giving-tuesday-bot .
-#
+.PHONY: docker-build
+docker-build:
+	docker build --tag kindness-box .
+
+docker-run:
+	docker run --network=host kindness-box:latest
+
 #backup-db:
 #	mkdir -p ./backup/
 #	pg_dump --user=bot bot > ./backup/$(date).bak
