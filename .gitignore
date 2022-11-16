@@ -3,5 +3,4 @@ __pypackages__
 .pdm.toml
 pdm.lock
 *.env
-todo.txt
 .idea
