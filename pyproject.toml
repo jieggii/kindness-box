@@ -27,11 +27,12 @@ dev = [
     "flake8>=5.0.4",
     "black>=22.10.0",
     "isort>=5.10.1",
+    "openpyxl>=3.0.10",
 ]
 
 [tool.pdm.scripts]
-fmt.shell = "isort ./app/ && black ./app/"
-lint = "flake8 ./app/"
+fmt.shell = "isort ./app/ ./scripts/ && black ./app/ ./scripts/"
+lint = "flake8 ./app/ ./scripts/"
 
 [tool.black]
 line-length = 100
