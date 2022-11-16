@@ -53,9 +53,9 @@ class YesNoKeyboard(Keyboard):
 class ChooseCityKeyboard(Keyboard):
     def __init__(self):
         super(ChooseCityKeyboard, self).__init__()
-        for i, city in enumerate(PointLocality):
-            self.add_text_button(text=city, color=ButtonColor.SECONDARY)
-            if (i + 1) % 2 == 0:
+        for i, locality in enumerate(PointLocality):
+            self.add_text_button(text=locality, color=ButtonColor.SECONDARY)
+            if (i + 1) % 2 == 0 and i < len(PointLocality) - 1:
                 self.add_row()
 
 
