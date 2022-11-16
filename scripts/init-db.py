@@ -1,6 +1,7 @@
 # script for initializing kindness-box database
 # requires installation of the project via pdm **with dev dependencies**
-# must be run only from the ./scripts/ directory (relative to the project directory)
+# must be run only from the project home directory
+# pdm run python scripts/init-db.py --env debug.env --exec scripts/init-db.sql persons.xlsx
 
 # notes:
 # - run on totally empty db right after user creation
