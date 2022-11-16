@@ -8,6 +8,7 @@ class PointLocality(str, Enum):
     KOSTOMUKSHA = "Костомукша"
     PETROZAVODSK = "Петрозаводск"
     MUEZERKA = "Муезерка"
+    KALEVALA = "Калевала"
 
 
 class Point(Model):
