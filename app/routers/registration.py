@@ -45,7 +45,7 @@ async def choose_city(event: BotEvent):
     event = SimpleBotEvent(event)
     kbd = ChooseCityKeyboard()
     await event.answer(
-        "Выбери город, в котором ты будешь принимать участие в акции:",
+        "Выбери населенный пункт, в котором ты будешь принимать участие в акции:",
         keyboard=kbd.get_keyboard(),
     )
     await FSM.set_state(state=RegistrationState.SET_LOCALITY, event=event, for_what=FOR_USER)
