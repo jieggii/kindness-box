@@ -29,6 +29,6 @@ docker-build:
 docker-run:
 	docker run --network=host kindness-box:latest
 
-#backup-db:
-#	mkdir -p ./backup/
-#	pg_dump --user=bot bot > ./backup/$(date).bak
+backup-db:
+	mkdir -p ./backup/
+	pg_dump --user=kindness-box kindness-box > ./backup/$(shell date +%d.%m.%Y-%H:%M:%S).bak
