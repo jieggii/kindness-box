@@ -4,3 +4,4 @@ __pypackages__
 pdm.lock
 *.env
 .idea
+backup
