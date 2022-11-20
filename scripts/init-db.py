@@ -70,7 +70,7 @@ def main():
                 "с понедельника по пятницу в Дом Творчества (пер. Строителей, д. 13) с 10 до 19"
             )
         elif locality_enum == db.models.PointLocality.KALEVALA:
-            address = "<unknown>"  # todo
+            address = "с понедельника по пятницу по адресу ЦСО, ул. Пионерская, д. 15. с 9 до 17, перерыв на обед с 13 до 14"
         else:
             raise ValueError()
 
