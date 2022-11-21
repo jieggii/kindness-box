@@ -12,28 +12,38 @@ def pretty_person_name(name: str):
     return f"{first_name} {last_name[0]}."
 
 
-async def get_persons_list(current_donator: Donator):
+async def get_persons_list(current_donator: Donator) -> list[str]:
+    # returns list of batches 'cause of VK message length limits.
+    # one batch = one message
+    batches = []
     point = await current_donator.point.first()
-    message = "Список подарков:\n"
     persons = await Person.filter(point=point).order_by("person_id")
 
-    for person in persons:
+    current_message = ""
+
+    for i, person in enumerate(persons):
         donator = await person.donator
         if donator:
-            message += f"{_CHECKBOX_CHECKED} "
+            current_message += f"{_CHECKBOX_CHECKED} "
         else:
-            message += f"{_CHECKBOX_UNCHECKED} "
-        message += f"#{prettify_person_id(person.person_id)} {pretty_person_name(person.name)} {person.age} лет "
+            current_message += f"{_CHECKBOX_UNCHECKED} "
+        current_message += f"#{prettify_person_id(person.person_id)} {pretty_person_name(person.name)} {person.age} лет "
 
         if donator:
             if donator == current_donator:
-                message += "(подарок уже покупаешь ты) "
+                current_message += "(подарок уже покупаешь ты) "
             else:
-                message += f"(подарок уже покупает @id{donator.vk_user_id}({donator.name})) "
+                current_message += f"(подарок уже покупает @id{donator.vk_user_id}({donator.name})) "
 
-        message += f"-- {person.gift}\n\n"
+        current_message += f"-- {person.gift}\n\n"
+        if (i+1) % 17 == 0:  # todo: change batch size
+            batches.append(current_message)
+            current_message = ""
 
-    return message
+    if current_message:
+        batches.append(current_message)
+
+    return batches
 
 
 async def get_necessary_data_list():

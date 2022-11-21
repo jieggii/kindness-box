@@ -41,7 +41,15 @@ async def send_all_persons_list(event: BotEvent):
     donator = await db.util.get_donator(event.from_id)
 
     await FSM.set_state(state=HomeState.CHOOSE_PERSONS, event=event, for_what=FOR_USER)
-    await event.answer(await output.get_persons_list(donator))
+
+    batches = await output.get_persons_list(donator)
+    if not batches:
+        await event.answer("Список подарков для вашего населенного пункта еще не готов.")
+        return
+
+    await event.answer("Список подарков:")
+    for batch in batches:
+        await event.answer(batch)
 
     kbd = CancelKeyboard()
     await event.answer(
