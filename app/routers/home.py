@@ -4,7 +4,7 @@ from vkwave.bots import BotEvent, DefaultRouter, Keyboard, SimpleBotEvent
 from vkwave.bots.fsm import ForWhat, StateFilter
 
 from app import aliases, db, output, templates, user_input
-from app.db.models import Donator, Person
+from app.db.models import Donator, Person, Point, PointLocality
 from app.fsm import FSM, HomeState
 from app.keyboards import CancelKeyboard, HomeKeyboard, HomeNoPersonsKeyboard, StartKeyboard
 from app.person_id import parse_pretty_person_id, prettify_person_id
@@ -115,13 +115,45 @@ async def choose_persons(event: BotEvent):
     await send_home(event)
 
 
+async def send_stats(event: SimpleBotEvent):
+    stats = {}  # e.g. {"Костомукша": }
+
+    for i, point in enumerate(await Point.all()):
+        persons = await Person.filter(point_id=point.point_id).all()
+        total_persons = len(persons)
+        chosen_persons = 0
+        satisfied_persons = 0
+
+        for person in persons:
+            if person.donator:
+                chosen_persons += 1
+                donator = await person.donator.first()
+                if donator.brought_gifts:
+                    satisfied_persons += 1
+        stats[point.locality.value] = {
+            "chosen": chosen_persons,
+            "satisfied": satisfied_persons,
+            "total": total_persons,
+        }
+
+    message = (
+        "Статистика в формате:\n"
+        "Населенный пункт: (количество выбранных человек (из них количество человек, которым уже принесли подарки) / всего человек)\n"
+    )
+    for locality_value, stats in stats.items():
+        message += (
+            f"{locality_value}: {stats['chosen']} ({stats['satisfied']}) / {stats['total']}\n"
+        )
+
+    await event.answer(message)
+
+
 @reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.HOME, for_what=FOR_USER))
 async def home(event: BotEvent):
     event = SimpleBotEvent(event)
     text = event.text
     donator = await db.util.get_donator(event.user_id)
     persons = await Person.filter(donator=donator)
-
     if persons:
         if text == HomeKeyboard.EDIT_MY_LIST:
             await send_all_persons_list(event)
@@ -152,6 +184,8 @@ async def home(event: BotEvent):
 
         elif text == HomeKeyboard.REJECT_PARTICIPATION:
             await send_rejection_confirmation(event)
+        elif text.lower() == "статистика":
+            await send_stats(event)
         else:
             await event.answer(templates.INVALID_OPTION)
 
@@ -160,6 +194,8 @@ async def home(event: BotEvent):
             await send_all_persons_list(event)
         elif text == HomeNoPersonsKeyboard.REJECT_PARTICIPATION:
             await send_rejection_confirmation(event)
+        elif text.lower() == "статистика":
+            await send_stats(event)
         else:
             await event.answer(templates.INVALID_OPTION)
 
@@ -205,3 +241,11 @@ async def confirm_i_brought_gifts(event: BotEvent):
 
     elif confirmation is False:
         await send_home(event)
+
+
+@reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.FINISH, for_what=FOR_USER))
+async def finish(event: BotEvent):
+    event = SimpleBotEvent(event)
+    text = event.text
+    if text.lower() == "статистика":
+        await send_stats(event)
