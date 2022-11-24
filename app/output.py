@@ -33,10 +33,12 @@ async def get_persons_list(current_donator: Donator) -> list[str]:
             if donator == current_donator:
                 current_message += "(подарок уже покупаешь ты) "
             else:
-                current_message += f"(подарок уже покупает @id{donator.vk_user_id}({donator.name})) "
+                current_message += (
+                    f"(подарок уже покупает @id{donator.vk_user_id}({donator.name})) "
+                )
 
         current_message += f"-- {person.gift}\n\n"
-        if (i+1) % 17 == 0:  # todo: change batch size
+        if (i + 1) % 17 == 0:  # todo: change batch size
             batches.append(current_message)
             current_message = ""
 
