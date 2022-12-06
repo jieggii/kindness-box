@@ -116,7 +116,7 @@ async def choose_persons(event: BotEvent):
 
 
 async def send_stats(event: SimpleBotEvent):
-    stats = {}  # e.g. {"Костомукша": }
+    stats = {}
 
     for i, point in enumerate(await Point.all()):
         persons = await Person.filter(point_id=point.point_id).all()
@@ -137,8 +137,8 @@ async def send_stats(event: SimpleBotEvent):
         }
 
     message = (
-        "Статистика в формате:\n"
-        "Населенный пункт: количество выбранных человек (из них количество человек, которым уже принесли подарки) / всего человек\n\n"
+        "Статистика в формате\n"
+        "Населенный пункт: количество выбранных человек (количество человек, которым уже принесли подарки) / всего человек\n\n"
     )
     for locality_value, stats in stats.items():
         message += (
