@@ -1,0 +1,21 @@
+[document.rows]
+id = 0
+names = 1
+age = 2
+gift = 3
+
+[[points]]
+locality = "Костомукша"
+details = "..."
+
+[[points]]
+locality = "Петрозаводск"
+details = "..."
+
+[[points]]
+locality = "Калевала"
+details = "..."
+
+[[points]]
+locality = "Муезерский"
+details = "..."

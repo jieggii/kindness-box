@@ -1,0 +1,43 @@
+[project]
+name = "kindness-box"
+version = ""
+description = ""
+authors = [
+    {name = "jieggii", email = "jieggii@pm.me"},
+]
+dependencies = [
+    "vkwave @ git+https://github.com/fscdev/vkwave.git@4c6945b",
+    "betterconf>=2.6.1",
+    "tortoise-orm[asyncpg]>=0.19.2",
+    "uvloop>=0.17.0",
+    "python-dotenv[cli]>=0.21.0",
+]
+requires-python = ">=3.9"
+license = {text = "MIT"}
+[project.optional-dependencies]
+
+[build-system]
+requires = ["pdm-pep517>=1.0.0"]
+build-backend = "pdm.pep517.api"
+
+[tool]
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+dev = [
+    "flake8>=5.0.4",
+    "black>=22.10.0",
+    "isort>=5.10.1",
+    "openpyxl>=3.0.10",
+]
+
+[tool.pdm.scripts]
+fmt.shell = "isort ./app/ ./scripts/ && black ./app/ ./scripts/"
+lint = "flake8 ./app/ ./scripts/"
+
+[tool.black]
+line-length = 105
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 105
