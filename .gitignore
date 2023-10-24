@@ -1,6 +1,10 @@
+.idea
+
 __pycache__
 __pypackages__
+
 .pdm.toml
+.pdm-python
+
 *.env
-.idea
 backup
