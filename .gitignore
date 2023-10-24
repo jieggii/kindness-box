@@ -1,7 +1,6 @@
 __pycache__
 __pypackages__
 .pdm.toml
-pdm.lock
 *.env
 .idea
 backup
