@@ -1,43 +1,49 @@
 """
-    init-db.py is a script for initializing kindness-box database.
+    fill-db.py is a script for filling kindness-box database.
+
     It requires installation of the project via pdm with dev dependencies.
     Must be run only from the project home directory.
     pdm run python scripts/init-db.py persons.xlsx
 
-    notes:
-    - run on totally empty db right after user creation
-    - count of person numbers in the XLSX document must be bigger than count of persons
-    - check if locality names are correct in the XLSX document before running this script
+    XLSX table format:
+    id | Name and lastname | Age | Municipality | Gift description |
+     1     Ivan Ivanov       18     Костомукша    Описание подарка
+
+    Notes:
+    - Run on an empty database
+    - Count of person numbers in the XLSX document must be bigger than count of persons
+    - Check if locality names are correct in the XLSX document before running this script
+
+    Todos:
+    - Use CSV format instead of XLSX
 """
 
 import argparse
 import asyncio
 import sys
 
-import postgres_credentials
 from bot import db
 from openpyxl import load_workbook
+from scripts.lib import postgres_credentials
 
-ADDRESSES = {
-    db.models.PointLocality.PETROZAVODSK: "петрозаводск1",
-    db.models.PointLocality.KOSTOMUKSHA: "костомукша1",
-    db.models.PointLocality.MUEZERSKIY: "муезерский1",
-    db.models.PointLocality.KALEVALA: "калевала1"
+ADDRESSES = {  # gift point addresses in different municipalities
+    db.models.PointLocality.PETROZAVODSK: "адрес в Петрозаводске",
+    db.models.PointLocality.KOSTOMUKSHA: "адрес в Костомукше",
+    db.models.PointLocality.MUEZERSKIY: "адрес в Муезерском",
+    db.models.PointLocality.KALEVALA: "адрес в Калевале"
 }
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
         prog="init-db.py",
-        description="Use this script to initialize kindness-box database",
+        description="Use this script to fill kindness-box database",
     )
 
     parser.add_argument("--host", type=str, default="localhost", help="PostgreSQL host")
     parser.add_argument("-p", "--port", type=int, default=5432, help="PostgreSQL port")
-    parser.add_argument("file", type=argparse.FileType("rb"), help="XLSX file in special format")
-    # Excel table format:
-    # id | Name and lastname | Age | Locality | Gift description |
-    # 0    1                   2     3          4
+    parser.add_argument("file", type=argparse.FileType("rb"), help="input XLSX file in special format")
+
     return parser.parse_args()
 
 
@@ -112,7 +118,7 @@ def main():
             person_id=number, name=name, age=age, gift=gift, point=points[locality]
         )
         loop.run_until_complete(person.save())
-        print(f"[+] Added new person {name}, person_id={number}.")
+        print(f"[+] Added new person {person}.")
 
 
 if __name__ == "__main__":
