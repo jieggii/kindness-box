@@ -1,0 +1,43 @@
+services:
+  kindness-box-bot:
+    container_name: kindness-box-bot
+    build:
+      context: .
+
+    environment:
+      BOT_ACCESS_TOKEN_FILE: /run/secrets/bot/access_token
+      BOT_GROUP_ID_FILE: /run/secrets/bot/group_id
+
+      POSTGRES_HOST: kindness-box-postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER_FILE: /run/secrets/postgres/user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres/password
+      POSTGRES_DB_FILE: /run/secrets/postgres/db
+
+    depends_on:
+      - kindness-box-postgres
+
+    secrets:
+      - bot
+      - postgres
+
+  kindness-box-postgres:
+    container_name: kindness-box-postgres
+    image: postgres:16
+
+    environment:
+      POSTGRES_USER_FILE: /run/secrets/postgres/user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres/password
+      POSTGRES_DB_FILE: /run/secrets/postgres/db
+
+    secrets:
+      - postgres
+
+    ports:
+      - "5432:5432"
+
+secrets:
+  postgres:
+    file: ./.secrets/postgres
+  bot:
+    file: ./.secrets/bot

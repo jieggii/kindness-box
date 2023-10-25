@@ -1,13 +1,22 @@
-FROM python:3.10
+FROM python:3.11 as builder
 
-WORKDIR /kindness-box/
+WORKDIR /kindness-box-build
 
-RUN pip install pdm==2.2.1
-RUN pdm config check_update false && pdm config python.use_venv false
+RUN pip install -U pip setuptools wheel
+RUN pip install pdm
 
-COPY pyproject.toml pdm.lock* .env  ./
-COPY app app/
+COPY pyproject.toml pdm.lock* ./
+#COPY bot/ ./bot
 
-RUN pdm install --prod
+RUN mkdir __pypackages__ && pdm sync -v --prod --no-editable
 
-ENTRYPOINT ["pdm", "run", "dotenv", "-f", ".env", "run", "python", "-m", "app"]
+FROM python:3.11
+
+WORKDIR /kindness-box
+
+COPY --from=builder /kindness-box-build/__pypackages__/3.11/bin/* /bin/
+COPY --from=builder /kindness-box-build/__pypackages__/3.11/lib ./pkgs
+COPY bot ./bot
+
+ENV PYTHONPATH=/kindness-box/pkgs
+ENTRYPOINT ["python", "-m", "bot"]

@@ -1,6 +1,6 @@
 from vkwave.bots import ButtonColor, Keyboard
 
-from app.db.models import PointLocality
+from bot.db.models import PointLocality
 
 
 class CancelKeyboard(Keyboard):

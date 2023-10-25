@@ -3,9 +3,9 @@ from typing import Optional
 from vkwave.bots import SimpleBotEvent
 from vkwave.bots.fsm import ForWhat, State
 
-from app.fsm import FSM
-from app.keyboards import YesNoKeyboard
-from app.templates import INVALID_OPTION
+from bot.fsm import FSM
+from bot.keyboards import YesNoKeyboard
+from bot.templates import INVALID_OPTION
 
 
 async def send_confirmation(

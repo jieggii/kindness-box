@@ -23,7 +23,7 @@ class Point(Model):
         return self.__str__()
 
     def __str__(self):
-        return f"Point({self.point_id}, {self.locality})"
+        return f"Point({self.point_id}, {self.locality}, {self.address})"
 
 
 class Donator(Model):

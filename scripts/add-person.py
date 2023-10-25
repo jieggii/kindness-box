@@ -1,11 +1,5 @@
-# shitty script to add new persons
-
-
 import argparse
 import asyncio
-import sys
-
-from openpyxl import load_workbook
 
 
 def parse_args():
@@ -28,8 +22,6 @@ def main():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     print("[*] Reading env")
-    from app import db
-    from app.config import config
 
     print(
         f"[*] Connecting to postgresql at {config.PG.USER}@{config.PG.HOST}:{config.PG.PORT}/{config.PG.DATABASE}"
@@ -43,7 +35,7 @@ def main():
 
     point = loop.run_until_complete(asyncio.gather(db.models.Point.get(point_id=point_id)))[0]
     print(point)
-    # race condition is impossible in our conditions, so:
+
     last_person = loop.run_until_complete(
         asyncio.gather(db.models.Person.all().order_by("-person_id").first())
     )[0]

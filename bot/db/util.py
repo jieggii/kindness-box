@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from app.db.models import Donator, Person
+from bot.db.models import Donator, Person
 
 
 async def assign_donator_to_persons(donator: Donator, persons: List[Person]):

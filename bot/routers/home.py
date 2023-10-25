@@ -3,11 +3,11 @@ import logging
 from vkwave.bots import BotEvent, DefaultRouter, Keyboard, SimpleBotEvent
 from vkwave.bots.fsm import ForWhat, StateFilter
 
-from app import aliases, db, output, templates, user_input
-from app.db.models import Donator, Person, Point, PointLocality
-from app.fsm import FSM, HomeState
-from app.keyboards import CancelKeyboard, HomeKeyboard, HomeNoPersonsKeyboard, StartKeyboard
-from app.person_id import parse_pretty_person_id, prettify_person_id
+from bot import aliases, db, output, templates, user_input
+from bot.db.models import Donator, Person, Point, PointLocality
+from bot.fsm import FSM, HomeState
+from bot.keyboards import CancelKeyboard, HomeKeyboard, HomeNoPersonsKeyboard, StartKeyboard
+from bot.person_id import parse_pretty_person_id, prettify_person_id
 
 logger = logging.getLogger(__name__)
 

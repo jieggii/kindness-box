@@ -1,6 +1,6 @@
-from app.db.models import Donator, Person
-from app.keyboards import HomeKeyboard
-from app.person_id import prettify_person_id
+from bot.db.models import Donator, Person
+from bot.keyboards import HomeKeyboard
+from bot.person_id import prettify_person_id
 
 _CHECKBOX_CHECKED = "[ X ]"
 _CHECKBOX_UNCHECKED = "[&#8195;]"

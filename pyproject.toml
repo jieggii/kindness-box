@@ -1,12 +1,13 @@
 [project]
 name = ""
-version = ""
+version = "0.1.0"
 description = ""
 authors = [
-    {name = "jieggii", email = "jieggii@pm.me"},
+    {name = "jieggii", email = "jieggii@protonmail.com"},
 ]
 dependencies = [
-    "vkwave @ git+https://github.com/fscdev/vkwave.git@4c6945b",
+#    "vkwave @ git+https://github.com/fscdev/vkwave.git@4c6945b",
+    "vkwave @ git+https://github.com/fscdev/vkwave.git@50e1f75",
     "betterconf>=2.6.1",
     "tortoise-orm[asyncpg]>=0.19.2",
     "uvloop>=0.17.0",
