@@ -8,8 +8,13 @@ class ParsingError(Exception):
     pass
 
 
-def parse_phone_number(string: str) -> str:  # todo
+def parse_phone_number(string: str) -> str:
     """Parses phone number from string.
+
+    Returns
+    ------
+    str
+        Found phone number.
 
     Raises
     ------
@@ -23,6 +28,11 @@ def parse_phone_number(string: str) -> str:  # todo
 
 def parse_recipient_identifiers(string: str) -> list[int]:
     """Parses recipient identifiers from string.
+
+    Returns
+    ------
+    list[int]
+        Found recipient identifiers.
 
     Raises
     ------

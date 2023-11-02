@@ -36,7 +36,10 @@ async def send_home(event: BotEvent):
     # if the current donor has at least one recipient:
     if await Recipient.find_one(Recipient.donor != None):  # noqa
         kbd = HomeKeyboard()
-        await event.answer(messages.MAIN_MENU_CHOOSE_ACTION_USING_KBD, keyboard=kbd.get_keyboard())
+        await event.answer(
+            "Ты в главном меню. Пожалуйста, выбери действие с помощью клавиатуры.",
+            keyboard=kbd.get_keyboard(),
+        )
 
     else:
         kbd = NoRecipientsHomeKeyboard()
