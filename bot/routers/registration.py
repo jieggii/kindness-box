@@ -34,13 +34,13 @@ async def start(event: BotEvent):
         await FSM.add_data(event, for_what=FOR_USER, state_data={FSMDataKey.DONOR_NAME: f"{first_name} {last_name}"})
 
         logger.info(f"a new user {first_name} {last_name} (vk.com/id{user_id}) started registration")
-        await request_municipality(event)
+        await request_municipality_name(event)
     else:
         logger.warning(f"existing donor {donor} without state has started registration, sending him home")
         await home.send_home(event)
 
 
-async def request_municipality(event: BotEvent):
+async def request_municipality_name(event: BotEvent):
     event = SimpleBotEvent(event)
 
     municipalities = await Municipality.find_all().to_list()
@@ -52,7 +52,7 @@ async def request_municipality(event: BotEvent):
 
 
 @reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.SET_MUNICIPALITY, for_what=FOR_USER))
-async def set_city(event: BotEvent):
+async def set_municipality_name(event: BotEvent):
     event = SimpleBotEvent(event)
     municipality_name = event.text
 
@@ -66,11 +66,11 @@ async def set_city(event: BotEvent):
         keyboard=kbd.get_keyboard(),
     )
     await FSM.add_data(event, for_what=FOR_USER, state_data={FSMDataKey.MUNICIPALITY_NAME: municipality_name})
-    await FSM.set_state(state=RegistrationState.CHOOSE_SELF_OR_ORG, event=event, for_what=FOR_USER)
+    await FSM.set_state(state=RegistrationState.CHOOSE_ORGANIZATION_OPTION, event=event, for_what=FOR_USER)
 
 
-@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.CHOOSE_SELF_OR_ORG, for_what=FOR_USER))
-async def choose_self_or_org(event: BotEvent):
+@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.CHOOSE_ORGANIZATION_OPTION, for_what=FOR_USER))
+async def choose_organization_option(event: BotEvent):
     event = SimpleBotEvent(event)
 
     match event.text:
@@ -87,12 +87,12 @@ async def choose_self_or_org(event: BotEvent):
             )
             await FSM.set_state(state=RegistrationState.SET_ORGANIZATION_NAME, event=event, for_what=FOR_USER)
 
-        case _:  # other choice
+        case _:
             await event.answer(messages.INVALID_OPTION)
 
 
 @reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.SET_ORGANIZATION_NAME, for_what=FOR_USER))
-async def set_organization(event: BotEvent):
+async def set_organization_name(event: BotEvent):
     event = SimpleBotEvent(event)
     organization_name = event.text
 
@@ -192,7 +192,7 @@ async def confirm_registration(event: BotEvent):
                     FSMDataKey.ORGANIZATION_NAME: None,
                 },
             )
-            await request_municipality(event)
+            await request_municipality_name(event)
             await FSM.set_state(state=RegistrationState.SET_MUNICIPALITY, event=event, for_what=FOR_USER)
 
         case _:

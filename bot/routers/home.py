@@ -78,7 +78,7 @@ async def send_all_recipients_list(event: BotEvent):
 
         message += f"-- {recipient.gift_description}\n\n"
 
-    await FSM.set_state(state=HomeState.CHOOSE_PERSONS, event=event, for_what=FOR_USER)
+    await FSM.set_state(state=HomeState.CHOOSE_RECIPIENTS, event=event, for_what=FOR_USER)
 
     for batch in vk_util.batch_message(message):
         await event.answer(batch)
@@ -94,7 +94,7 @@ async def send_all_recipients_list(event: BotEvent):
     )
 
 
-@reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.CHOOSE_PERSONS, for_what=FOR_USER))
+@reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.CHOOSE_RECIPIENTS, for_what=FOR_USER))
 async def choose_recipients(event: BotEvent):
     event = SimpleBotEvent(event)
 
