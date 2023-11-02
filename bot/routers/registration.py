@@ -144,7 +144,7 @@ async def request_registration_confirmation(event: BotEvent):
 
     message += f"- Контактный номер телефона: {phone_number}\n\n" f"Все верно?"
 
-    kbd = YesNoKeyboard()
+    kbd = YesNoKeyboard(primary_option=True)
     await FSM.set_state(RegistrationState.CONFIRM_REGISTRATION, event, FOR_USER)
     await event.answer(message, keyboard=kbd.get_keyboard())
 

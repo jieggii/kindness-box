@@ -17,7 +17,6 @@ async def fetch_current_user_name(event: SimpleBotEvent) -> (str, str):
         First name and last name.
     """
     data = (await event.api_ctx.users.get(user_ids=event.from_id)).response[0]
-    print(data)
     return data.first_name, data.last_name
 
 

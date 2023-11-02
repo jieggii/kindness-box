@@ -1,4 +1,4 @@
-from beanie import DeleteRules, WriteRules
+from beanie import DeleteRules
 from beanie.operators import In
 from loguru import logger
 from vkwave.bots import BotEvent, DefaultRouter, Keyboard, SimpleBotEvent
@@ -27,13 +27,14 @@ async def send_home(event: BotEvent):
     donor = await Donor.find_one(Donor.user_id == event.from_id)
 
     if donor.brought_gifts:
-        logger.warning("got message from brought_gifts==True donor. setting state to FINISH")
+        logger.warning("message from donor who has already brought gifts, settings state to FINISH")
         await FSM.set_state(state=HomeState.FINISH, event=event, for_what=FOR_USER)
         return
 
     await FSM.set_state(state=HomeState.HOME, event=event, for_what=FOR_USER)
 
-    if await Recipient.find_one(Recipient.donor != None):  # if the current donor has at least one recipient
+    # if the current donor has at least one recipient:
+    if await Recipient.find_one(Recipient.donor != None):  # noqa
         kbd = HomeKeyboard()
         await event.answer(messages.MAIN_MENU_CHOOSE_ACTION_USING_KBD, keyboard=kbd.get_keyboard())
 
@@ -70,7 +71,7 @@ async def send_all_recipients_list(event: BotEvent):
         message += f"{checkbox} #{recipient.identifier} {fmt.recipient_name(recipient.name)} {recipient.age} лет "
 
         if recipient.donor:
-            if recipient.donor.id == donor.id:
+            if recipient.donor.id == donor.id:  # noqa
                 message += "(подарок уже покупаешь ты) "
             else:
                 message += f"(подарок уже покупает @id{recipient.donor.user_id}({recipient.donor.name})) "
@@ -88,7 +89,7 @@ async def send_all_recipients_list(event: BotEvent):
         f"от 1 до {settings.MAX_CHOSEN_RECIPIENTS} человек, которым будешь покупать подарок"
         f"{f' от имени организации <<{donor.organization_name}>>.' if donor.organization_name else '.'}"
         "\n"
-        "Например: 1, 7, 3б 5",
+        "Например: 1, 7, 3",
         keyboard=kbd.get_keyboard(),
     )
 
@@ -153,7 +154,7 @@ async def choose_recipients(event: BotEvent):
     message += (
         "\n"
         "Чтобы узнать подробную информацию о том куда, "
-        f"когда и в каком виде приносить подарок, нажми на кнопку <<{HomeKeyboard.INFO}>>",
+        f"когда и в каком виде приносить подарок, нажми на кнопку <<{HomeKeyboard.INFO}>>"
     )
 
     await event.answer(message)
