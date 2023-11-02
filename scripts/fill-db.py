@@ -1,21 +1,15 @@
 """
-    fill-db.py is a script for filling kindness-box database.
+    fill-db.py is a script for filling kindness-box database with recipients.
 
     It requires installation of the project via pdm with dev dependencies.
     Must be run only from the project home directory.
-    pdm run python scripts/init-db.py persons.xlsx
 
-    XLSX table format:
+    CSV table format:
     | id | Name and lastname | Age | Municipality | Gift description |
       1     Ivan Ivanov       18     Костомукша    Описание подарка
 
-    Notes:
-    - Run on an empty database
-    - Count of person numbers in the XLSX document must be bigger than count of persons
-    - Check if municipality names are correct in the XLSX document before running this script
-
-    Todos:
-    - Use CSV format instead of XLSX
+    Example command:
+    `pdm run python scripts/fill-db.py recipients.csv`
 """
 
 import argparse
