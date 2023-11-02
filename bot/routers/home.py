@@ -4,7 +4,7 @@ from loguru import logger
 from vkwave.bots import BotEvent, DefaultRouter, Keyboard, SimpleBotEvent
 from vkwave.bots.fsm import ForWhat, StateFilter
 
-from bot import aliases, fmt, messages, parsers, vk_util, settings
+from bot import aliases, fmt, messages, parsers, settings, vk_util
 from bot.database.models import Donor, Municipality, Recipient
 from bot.fsm import FSM, HomeState
 from bot.keyboards import CancelKeyboard, HomeKeyboard, HomeNoRecipientsKeyboard, StartKeyboard
@@ -136,9 +136,7 @@ async def choose_recipients(event: BotEvent):
 
     message = "Отлично, теперь тебе нужно купить и упаковать подарки для этих людей:\n"
     for recipient in recipients:
-        message += (
-            f"- {fmt.recipient_name(recipient.name)} (#{recipient.identifier}) -- {recipient.gift_description}\n"
-        )
+        message += f"- {fmt.recipient_name(recipient.name)} (#{recipient.identifier}) -- {recipient.gift_description}\n"
 
     message += (
         "\n"

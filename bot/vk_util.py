@@ -35,4 +35,4 @@ def batch_message(message: str, batch_size: int = 17) -> typing.Generator[str, N
     """
     lines = message.split("\n")
     for i in range(0, len(lines), batch_size):
-        yield "\n".join(lines[i: batch_size + i])
+        yield "\n".join(lines[i : batch_size + i])
