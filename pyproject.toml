@@ -1,12 +1,11 @@
 [project]
 name = "bot"
 version = "0.1.0"
-description = ""
+description = "VK chatbot designed for the annual \"Box of Kindness\" event. "
 authors = [
     { name = "jieggii", email = "jieggii@protonmail.com" },
 ]
 dependencies = [
-    #    "vkwave @ git+https://github.com/fscdev/vkwave.git@4c6945b",
     "vkwave @ git+https://github.com/fscdev/vkwave.git@50e1f75",
     "betterconf>=2.6.1",
     "tortoise-orm[asyncpg]>=0.19.2",
@@ -34,7 +33,6 @@ dev = [
 fmt.shell = "isort ./bot/ ./scripts/ && black ./bot/ ./scripts/"
 lint = "flake8 ./bot/ ./scripts/"
 start.shell = "BOT_ACCESS_TOKEN_FILE=./.secrets/bot/access_token BOT_GROUP_ID_FILE=./.secrets/bot/group_id MONGO_HOST=localhost MONGO_PORT=27017 MONGO_USERNAME_FILE=./.secrets/mongo/username MONGO_PASSWORD_FILE=./.secrets/mongo/password MONGO_DATABASE=kindness-box python -m bot"
-
 
 [tool.black]
 line-length = 120
