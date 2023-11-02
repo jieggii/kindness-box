@@ -27,7 +27,7 @@ import sys
 from loguru import logger
 
 from bot.database.init import init_database
-from bot.database.models import Donor, Municipality, Recipient
+from bot.database.models import Municipality, Recipient
 
 MONGO_USERNAME_FILE = "./.secrets/mongo/username"
 MONGO_PASSWORD_FILE = "./.secrets/mongo/password"
@@ -85,7 +85,7 @@ def main():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    logger.info(f"reading mongo credentials")
+    logger.info("reading mongo credentials")
     username, password = read_file(MONGO_USERNAME_FILE), read_file(MONGO_PASSWORD_FILE)
 
     logger.info(f"connecting to mongo database {args.database} at {username}@{args.host}:{args.port}")
