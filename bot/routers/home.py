@@ -4,10 +4,17 @@ from loguru import logger
 from vkwave.bots import BotEvent, DefaultRouter, Keyboard, SimpleBotEvent
 from vkwave.bots.fsm import ForWhat, StateFilter
 
-from bot import aliases, fmt, messages, parsers, settings, vk_util
+from bot import fmt, messages, parsers, settings, vk_util
 from bot.database.models import Donor, Municipality, Recipient
 from bot.fsm import FSM, HomeState
-from bot.keyboards import CancelKeyboard, HomeKeyboard, HomeNoRecipientsKeyboard, StartKeyboard
+from bot.keyboards.common import YesNoKeyboard
+from bot.keyboards.home import (
+    CancelKeyboard,
+    ConfirmIBroughtGiftsKeyboard,
+    HomeKeyboard,
+    NoRecipientsHomeKeyboard,
+    StartKeyboard,
+)
 
 FOR_USER = ForWhat.FOR_USER
 
@@ -31,7 +38,7 @@ async def send_home(event: BotEvent):
         await event.answer(messages.MAIN_MENU_CHOOSE_ACTION_USING_KBD, keyboard=kbd.get_keyboard())
 
     else:
-        kbd = HomeNoRecipientsKeyboard()
+        kbd = NoRecipientsHomeKeyboard()
         await event.answer(
             "Теперь ты в главном меню. "
             "Ты можешь выбрать людей, которым будешь дарить подарки, "
@@ -78,9 +85,10 @@ async def send_all_recipients_list(event: BotEvent):
     kbd = CancelKeyboard()
     await event.answer(
         "Перечисли через запятую идентификационные номера (число после символа <<#>>) "
-        "от 1 до 5 человек, которым будешь покупать подарок"
-        f"{f' от имени организации <<{donor.organization_name}>>.' if donor.organization_name else '.'}\n"
-        "Например: 105, 107, 103",
+        f"от 1 до {settings.MAX_CHOSEN_RECIPIENTS} человек, которым будешь покупать подарок"
+        f"{f' от имени организации <<{donor.organization_name}>>.' if donor.organization_name else '.'}"
+        "\n"
+        "Например: 1, 7, 3б 5",
         keyboard=kbd.get_keyboard(),
     )
 
@@ -99,8 +107,8 @@ async def choose_recipients(event: BotEvent):
         await event.answer("Я не понимаю тебя! Перечисли номера людей через запятую.\n" "Например: 105, 107, 103")
         return
 
-    if len(recipient_identifiers) > 5:
-        await event.answer(f"Нельзя выбрать больше 5-и человек. {messages.TRY_AGAIN}")
+    if len(recipient_identifiers) > settings.MAX_CHOSEN_RECIPIENTS:
+        await event.answer(f"Нельзя выбрать больше {settings.MAX_CHOSEN_RECIPIENTS}-и человек. {messages.TRY_AGAIN}")
         return
 
     # fetch chosen recipients:
@@ -111,18 +119,22 @@ async def choose_recipients(event: BotEvent):
         )
         return
 
-    donor = await Donor.find_one(Donor.user_id == event.from_id)
+    donor = await Donor.find_one(Donor.user_id == event.from_id, fetch_links=True)
 
-    # todo: check if donor is in the same municipality as all selected recipients
-
-    # check if all recipients don't have any donors yet:
+    # check if all recipients don't have any donors yet
+    # and are located in the same municipality with the donor:
     for recipient in recipients:
         if recipient.donor:
             if recipient.donor.id != donor.id:
                 await event.answer(
-                    f"Одному или нескольким людям из выбранных тобой уже кто-то покупает подарок. {messages.TRY_AGAIN}"
+                    f"Одному или нескольким людям из выбранных тобой уже покупает подарок кто-то другой. {messages.TRY_AGAIN}"
                 )
                 return
+        if recipient.municipality.id != donor.municipality.id:
+            await event.answer(
+                f"Один или несколько человек, из выбранных тобой, находятся в другом муниципалитете. {messages.TRY_AGAIN}"
+            )
+            return
 
     # remove past assignations:
     async for recipient in Recipient.find(Recipient.donor.id == donor.id, fetch_links=True):
@@ -131,7 +143,7 @@ async def choose_recipients(event: BotEvent):
 
     # assign the current donor to the chosen recipients:
     for recipient in recipients:
-        recipient.donor = donor  # todo?: creates a new document instead of a link
+        recipient.donor = donor
         await recipient.save()
 
     message = "Отлично, теперь тебе нужно купить и упаковать подарки для этих людей:\n"
@@ -204,7 +216,7 @@ async def home(event: BotEvent):
                     "🚨 Важно:"
                     "\n"
                     f"1. Подарки следует принести до {settings.DEADLINE}."
-                    f"\n\n"
+                    f"\n"
                     "2. На подарке должны быть подписаны имя получателя и его идентификационный номер в системе."
                     "\n"
                     f"Эту информацию можно узнать, нажав на кнопку <<{HomeKeyboard.MY_LIST}>>."
@@ -212,15 +224,17 @@ async def home(event: BotEvent):
                 await event.answer(message)
 
             case HomeKeyboard.I_BROUGHT_GIFTS:
-                message = "Проверьте пожалуйста еще разок, что вы принесли подарки для всех получателей:\n"
+                message = "Проверь еще раз, что ты принес подарки для всех получателей:\n"
                 for recipient in recipients:
                     message += f"- {recipient.name} (#{recipient.identifier}) - {recipient.gift_description}\n"
 
-                await aliases.send_confirmation(
-                    event,
-                    text=message,
-                    confirmation_handler_state=HomeState.CONFIRM_I_BROUGHT_GIFTS,
+                message += (
+                    "\n"
+                    f"⚠️ Нажимай на кнопку <<{ConfirmIBroughtGiftsKeyboard.TRUE}>> только тогда, когда точно в этом уверен(а)!"
                 )
+                kbd = ConfirmIBroughtGiftsKeyboard()
+                await event.answer(message, keyboard=kbd.get_keyboard())
+                await FSM.set_state(state=HomeState.CONFIRM_I_BROUGHT_GIFTS, event=event, for_what=ForWhat.FOR_USER)
 
             case HomeKeyboard.REJECT_PARTICIPATION:
                 await send_rejection_confirmation(event)
@@ -230,10 +244,10 @@ async def home(event: BotEvent):
 
     else:
         match event.text:
-            case HomeNoRecipientsKeyboard.EDIT_MY_LIST:
+            case NoRecipientsHomeKeyboard.EDIT_MY_LIST:
                 await send_all_recipients_list(event)
 
-            case HomeNoRecipientsKeyboard.REJECT_PARTICIPATION:
+            case NoRecipientsHomeKeyboard.REJECT_PARTICIPATION:
                 await send_rejection_confirmation(event)
 
             case _:
@@ -241,57 +255,59 @@ async def home(event: BotEvent):
 
 
 async def send_rejection_confirmation(event: SimpleBotEvent):
-    await aliases.send_confirmation(
-        event=event,
-        text="Ты точно хочешь отказаться от участия в акции?",
-        confirmation_handler_state=HomeState.CONFIRM_REJECTION,
-    )
+    kbd = YesNoKeyboard(primary_option=False)
+    await FSM.set_state(state=HomeState.CONFIRM_REJECTION, event=event, for_what=ForWhat.FOR_USER)
+    await event.answer("Ты точно хочешь отказаться от участия в акции?", keyboard=kbd.get_keyboard())
 
 
 @reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.CONFIRM_REJECTION, for_what=FOR_USER))
 async def confirm_rejection(event: BotEvent):
     event = SimpleBotEvent(event)
-    confirmation = await aliases.handle_confirmation(event)
 
-    # проверки именно такие, потому что confirmation может также быть равен None (todo wtf?)
-    if confirmation is True:
-        donor = await Donor.find_one(Donor.user_id == event.from_id)
+    match event.text:
+        case YesNoKeyboard.TRUE:
+            donor = await Donor.find_one(Donor.user_id == event.from_id)
 
-        # I don't know why, but link_rule=DeleteRules.DELETE_LINKS doesn't work, so
-        # removing link to the donor being deleted manually:
-        recipients = Recipient.find(Recipient.donor.id == donor.id)
-        async for recipient in recipients:
-            recipient.donor = None
-            await recipient.save()
+            # I don't know why, but link_rule=DeleteRules.DELETE_LINKS doesn't work, so
+            # removing link to the donor being deleted manually:
+            recipients = Recipient.find(Recipient.donor.id == donor.id)
+            async for recipient in recipients:
+                recipient.donor = None
+                await recipient.save()
 
-        await donor.delete(link_rule=DeleteRules.DELETE_LINKS)
+            await donor.delete(link_rule=DeleteRules.DELETE_LINKS)
 
-        await event.answer(
-            "Хорошо! Если передумаешь -- смело пиши сюда снова",
-            keyboard=StartKeyboard().get_keyboard(),
-        )
-        await FSM.finish(event=event, for_what=FOR_USER)
+            await event.answer(
+                "Хорошо! Если передумаешь -- смело пиши сюда снова",
+                keyboard=StartKeyboard().get_keyboard(),
+            )
+            await FSM.finish(event=event, for_what=FOR_USER)
 
-    elif confirmation is False:
-        await send_home(event)
+        case YesNoKeyboard.FALSE:
+            await send_home(event)
+
+        case _:
+            await event.answer(messages.INVALID_OPTION)
 
 
 @reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.CONFIRM_I_BROUGHT_GIFTS, for_what=FOR_USER))
 async def confirm_i_brought_gifts(event: BotEvent):
     event = SimpleBotEvent(event)
-    confirmation = await aliases.handle_confirmation(event)
+    match event.text:
+        case ConfirmIBroughtGiftsKeyboard.TRUE:
+            donor = await Donor.find_one(Donor.user_id == event.from_id)
+            donor.brought_gifts = True
+            await donor.save()
 
-    if confirmation is True:
-        donor = await Donor.find_one(Donor.user_id == event.from_id)
-        donor.brought_gifts = True
-        await donor.save()
+            kbd = Keyboard()
+            await event.answer("🥳 Ура! Спасибо огромное за участие в акции <3", keyboard=kbd.get_empty_keyboard())
+            await FSM.set_state(state=HomeState.FINISH, event=event, for_what=FOR_USER)
 
-        kbd = Keyboard()
-        await event.answer("🥳 Ура! Спасибо огромное за участие в акции <3", keyboard=kbd.get_empty_keyboard())
-        await FSM.set_state(state=HomeState.FINISH, event=event, for_what=FOR_USER)
+        case ConfirmIBroughtGiftsKeyboard.FALSE:
+            await send_home(event)
 
-    elif confirmation is False:
-        await send_home(event)
+        case _:
+            await event.answer(messages.INVALID_OPTION)
 
 
 @reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.FINISH, for_what=FOR_USER))

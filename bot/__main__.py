@@ -35,10 +35,7 @@ loop.run_until_complete(
 access_token = read_file(env.Bot.ACCESS_TOKEN_FILE)
 group_id = int(read_file(env.Bot.GROUP_ID_FILE))
 
-bot = SimpleLongPollBot(
-    [access_token],
-    group_id,
-)
+bot = SimpleLongPollBot(tokens=[access_token], group_id=group_id, uvloop=False)  # todo: try to make uvloop work
 bot.router.registrar.add_default_filter(filters.EventTypeFilter("message_new"))
 
 bot.dispatcher.add_router(registration.router)
