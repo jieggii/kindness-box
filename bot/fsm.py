@@ -1,12 +1,19 @@
 from vkwave.bots.fsm import FiniteStateMachine, State
 
 
+class FSMDataKey:
+    DONOR_NAME = "donor_name"
+    MUNICIPALITY_NAME = "municipality_name"
+    ORGANIZATION_NAME = "organization_name"
+    PHONE_NUMBER = "phone_number"
+
+
 class RegistrationState:
-    SET_LOCALITY = State("SET_LOCALITY")
+    SET_MUNICIPALITY = State("SET_MUNICIPALITY")
 
     CHOOSE_SELF_OR_ORG = State("CHOOSE_SELF_OR_ORG")
-    SET_ORG_NAME = State("SET_ORG_NAME")
-    CONFIRM_ORG_NAME = State("CONFIRM_ORG_NAME")
+    SET_ORGANIZATION_NAME = State("SET_ORGANIZATION_NAME")
+    CONFIRM_ORGANIZATION_NAME = State("CONFIRM_ORGANIZATION_NAME")
 
     SET_PHONE_NUMBER = State("SET_PHONE_NUMBER")
     CONFIRM_PHONE_NUMBER = State("CONFIRM_PHONE_NUMBER")

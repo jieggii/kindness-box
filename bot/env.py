@@ -1,5 +1,4 @@
-from betterconf import Config
-from betterconf import caster, field
+from betterconf import Config, caster, field
 
 
 class Env(Config):
@@ -8,14 +7,14 @@ class Env(Config):
         ACCESS_TOKEN_FILE = field()
         GROUP_ID_FILE = field()
 
-    class Postgres(Config):
-        _prefix_ = "POSTGRES"
+    class Mongo(Config):
+        _prefix_ = "MONGO"
         HOST = field()
         PORT = field(caster=caster.to_int)
 
-        USER_FILE = field()
+        USERNAME_FILE = field()
         PASSWORD_FILE = field()
-        DB_FILE = field()
+        DATABASE = field()
 
 
 env = Env()

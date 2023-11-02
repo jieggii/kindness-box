@@ -1,109 +1,108 @@
-import logging
-
+from loguru import logger
 from vkwave.bots import BotEvent, DefaultRouter, Keyboard, SimpleBotEvent
 from vkwave.bots.fsm import NO_STATE, ForWhat, StateFilter
 
-from bot import aliases, api_util, db, templates, user_input
-from bot.db.models import Donator, Point, PointLocality
-from bot.fsm import FSM, HomeState, RegistrationState
-from bot.keyboards import ChooseCityKeyboard, OrgOrSelfChoiceKeyboard
+from bot import aliases, messages, parsers, settings, vk_util
+from bot.database.models import Donor, Municipality
+from bot.fsm import FSM, FSMDataKey, HomeState, RegistrationState
+from bot.keyboards import ChooseMunicipalityKeyboard, OrgOrSelfChoiceKeyboard
 from bot.routers import home
-
-logger = logging.getLogger(__name__)
 
 FOR_USER = ForWhat.FOR_USER
 
 router = DefaultRouter()
 reg = router.registrar
 
+MAX_ORGANIZATION_NAME_LEN = 500  # max length of organization name
+
 
 @reg.with_decorator(StateFilter(fsm=FSM, state=NO_STATE, for_what=FOR_USER))
-async def no_state(event: BotEvent):
+async def start(event: BotEvent):
     event = SimpleBotEvent(event)
     user_id = event.from_id
 
-    donator = await db.util.get_donator(user_id)
-    if not donator:
-        logger.info(f"New user (vk.com/id{user_id}) started registration")
-        user_data = await api_util.get_user_data(event)
-        name = user_data.first_name
-
+    donor = await Donor.find_one(Donor.user_id == user_id)
+    if not donor:
+        first_name, last_name = await vk_util.fetch_current_user_name(event)
         await event.answer(
-            f"Привет, {name}! Я Щедрый Бот -- бот для акции <<Щедрый Вторник>>.\n\n"
+            f"👋 Привет, {first_name}! Я бот для проведения акции <<Коробочка доброты>>.\n\n"
             "С моей помощью ты сможешь выбрать одного или нескольких человек с "
-            "ограниченными возможностями, которым будешь дарить подарок 🎅🏻\n\n"
-            f"Внимание! Выбранные подарки будет необходимо принести до {templates.DEADLINE}.\n"
+            "ограниченными возможностями, которым будешь дарить подарок.\n\n"
+            f"Обрати внимание, что выбранные подарки будет необходимо принести на точку сбора до {settings.DEADLINE}.\n\n"
             "Но, для начала, мне нужно узнать некоторую информацию о тебе."
         )
-        await choose_city(event)
+        await FSM.set_state(state=RegistrationState.SET_MUNICIPALITY, event=event, for_what=FOR_USER)
+        await FSM.add_data(event, for_what=FOR_USER, state_data={FSMDataKey.DONOR_NAME: f"{first_name} {last_name}"})
+
+        logger.info(f"a new user {first_name} {last_name} (vk.com/id{user_id}) started registration")
+        await request_municipality(event)
     else:
-        logger.warning(f"Got existing donator without state ({donator}), sending him home")
+        logger.warning(f"existing donor {donor} without state has started registration, sending him home")
         await home.send_home(event)
 
 
-async def choose_city(event: BotEvent):
+async def request_municipality(event: BotEvent):
     event = SimpleBotEvent(event)
-    kbd = ChooseCityKeyboard()
+
+    municipalities = await Municipality.find_all().to_list()
+    kbd = ChooseMunicipalityKeyboard([municipality.name for municipality in municipalities])
     await event.answer(
         "Выбери населенный пункт, в котором ты будешь принимать участие в акции:",
         keyboard=kbd.get_keyboard(),
     )
-    await FSM.set_state(state=RegistrationState.SET_LOCALITY, event=event, for_what=FOR_USER)
 
 
-@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.SET_LOCALITY, for_what=FOR_USER))
+@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.SET_MUNICIPALITY, for_what=FOR_USER))
 async def set_city(event: BotEvent):
     event = SimpleBotEvent(event)
-    locality = event.text
-    if locality in iter(PointLocality):
-        kbd = OrgOrSelfChoiceKeyboard()
-        await event.answer(
-            "Ты будешь участвовать в акции от своего имени, или от имени организации?",
-            keyboard=kbd.get_keyboard(),
-        )
-        await FSM.add_data(event, for_what=FOR_USER, state_data={"point_locality": locality})
-        await FSM.set_state(
-            state=RegistrationState.CHOOSE_SELF_OR_ORG, event=event, for_what=FOR_USER
-        )
-    else:
-        await event.answer(
-            "Этот город не участвует в акции! Пожалуйста, выбери название города с помощью клавиатуры."
-        )
+    municipality_name = event.text
+
+    if not await Municipality.find_one(Municipality.name == municipality_name):  # if municipality not found
+        await event.answer("Этот город не участвует в акции! Пожалуйста, выбери название города с помощью клавиатуры.")
+        return
+
+    kbd = OrgOrSelfChoiceKeyboard()
+    await event.answer(
+        "Ты будешь участвовать в акции от своего имени или от имени организации?",
+        keyboard=kbd.get_keyboard(),
+    )
+    await FSM.add_data(event, for_what=FOR_USER, state_data={FSMDataKey.MUNICIPALITY_NAME: municipality_name})
+    await FSM.set_state(state=RegistrationState.CHOOSE_SELF_OR_ORG, event=event, for_what=FOR_USER)
 
 
-@reg.with_decorator(
-    StateFilter(fsm=FSM, state=RegistrationState.CHOOSE_SELF_OR_ORG, for_what=FOR_USER)
-)
+@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.CHOOSE_SELF_OR_ORG, for_what=FOR_USER))
 async def choose_self_or_org(event: BotEvent):
     event = SimpleBotEvent(event)
-    text = event.text
-    if text == OrgOrSelfChoiceKeyboard.SELF:
-        await request_phone_number(event)
-        await FSM.set_state(
-            state=RegistrationState.SET_PHONE_NUMBER, event=event, for_what=FOR_USER
-        )
-        await FSM.add_data(event=event, for_what=FOR_USER, state_data={"org_name": None})
-    elif text == OrgOrSelfChoiceKeyboard.ORG:
-        kbd = Keyboard()
-        await event.answer(
-            "Хорошо. Тогда напиши, пожалуйста, название этой организации.",
-            keyboard=kbd.get_empty_keyboard(),
-        )
-        await FSM.set_state(state=RegistrationState.SET_ORG_NAME, event=event, for_what=FOR_USER)
-    else:
-        await event.answer(templates.INVALID_OPTION)
+
+    match event.text:
+        case OrgOrSelfChoiceKeyboard.SELF:  # no organization
+            await request_phone_number(event)
+            await FSM.set_state(state=RegistrationState.SET_PHONE_NUMBER, event=event, for_what=FOR_USER)
+            await FSM.add_data(event=event, for_what=FOR_USER, state_data={FSMDataKey.ORGANIZATION_NAME: None})
+
+        case OrgOrSelfChoiceKeyboard.ORG:  # organization
+            kbd = Keyboard()
+            await event.answer(
+                "Хорошо. Тогда напиши, пожалуйста, название этой организации.",
+                keyboard=kbd.get_empty_keyboard(),
+            )
+            await FSM.set_state(state=RegistrationState.SET_ORGANIZATION_NAME, event=event, for_what=FOR_USER)
+
+        case _:  # other choice
+            await event.answer(messages.INVALID_OPTION)
 
 
-@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.SET_ORG_NAME, for_what=FOR_USER))
-async def set_org_name(event: BotEvent):
+@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.SET_ORGANIZATION_NAME, for_what=FOR_USER))
+async def set_organization(event: BotEvent):
     event = SimpleBotEvent(event)
-    org_name = event.text
-    if len(org_name) > 500:
-        return await event.answer(f"Слишком длинное название организации. {templates.TRY_AGAIN}")
+    organization_name = event.text
+
+    if len(organization_name) > MAX_ORGANIZATION_NAME_LEN:
+        return await event.answer(f"Слишком длинное название организации. {messages.TRY_AGAIN}")
 
     await request_phone_number(event)
     await FSM.set_state(state=RegistrationState.SET_PHONE_NUMBER, event=event, for_what=FOR_USER)
-    await FSM.add_data(event=event, for_what=FOR_USER, state_data={"org_name": org_name})
+    await FSM.add_data(event=event, for_what=FOR_USER, state_data={FSMDataKey.ORGANIZATION_NAME: organization_name})
 
 
 async def request_phone_number(event: BotEvent):
@@ -116,43 +115,35 @@ async def request_phone_number(event: BotEvent):
     )
 
 
-@reg.with_decorator(
-    StateFilter(fsm=FSM, state=RegistrationState.SET_PHONE_NUMBER, for_what=FOR_USER)
-)
+@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.SET_PHONE_NUMBER, for_what=FOR_USER))
 async def set_phone_number(event: BotEvent):
     event = SimpleBotEvent(event)
-    phone_number = event.text
+    try:
+        phone_number = parsers.parse_phone_number(event.text)
+    except parsers.ParsingError:
+        await event.answer(f"Эээ... Это что-то не очень похоже на номер телефона. {messages.TRY_AGAIN}")
+        return
 
-    if user_input.is_phone_number(phone_number):
-        if phone_number == "88005553535":
-            await event.answer("Эй, что за приколы?) Давай нормальный номер!")
-            return
-        await FSM.add_data(
-            event=event, for_what=FOR_USER, state_data={"phone_number": phone_number}
-        )
-        await request_registration_confirmation(event)
-    else:
-        await event.answer(
-            f"Эээ... Это что-то не очень похоже на номер телефона. {templates.TRY_AGAIN}"
-        )
+    await FSM.add_data(event=event, for_what=FOR_USER, state_data={FSMDataKey.PHONE_NUMBER: phone_number})
+    await request_registration_confirmation(event)
 
 
 async def request_registration_confirmation(event: BotEvent):
     event = SimpleBotEvent(event)
+
     fsm_data = await FSM.get_data(event=event, for_what=FOR_USER)
 
-    point_locality = fsm_data["point_locality"]
-    org_name = fsm_data["org_name"]
-    phone_number = fsm_data["phone_number"]
+    municipality_name = fsm_data[FSMDataKey.MUNICIPALITY_NAME]
+    organization_name = fsm_data[FSMDataKey.ORGANIZATION_NAME]
+    phone_number = fsm_data[FSMDataKey.PHONE_NUMBER]
 
-    response = "Давай проверим данные:\n"
-    response += f"Населенный пункт: {point_locality}\n"
-    if org_name:
-        response += f"Организация: <<{org_name}>>\n"
+    response = "Давай проверим данные:\n" f"- Населенный пункт: {municipality_name}\n"
+    if organization_name:
+        response += f"- Организация: <<{organization_name}>>\n"
     else:
-        response += "Участвуешь в акции не от имени организации\n"
-    response += f"Контактный номер телефона: {phone_number}\n"
-    response += "\nВсе верно?"
+        response += "- Участвуешь в акции не от имени организации\n"
+
+    response += f"- Контактный номер телефона: {phone_number}\n\n" f"Все верно?"
 
     await aliases.send_confirmation(
         event=event,
@@ -161,40 +152,48 @@ async def request_registration_confirmation(event: BotEvent):
     )
 
 
-@reg.with_decorator(
-    StateFilter(fsm=FSM, state=RegistrationState.CONFIRM_REGISTRATION, for_what=FOR_USER)
-)
+@reg.with_decorator(StateFilter(fsm=FSM, state=RegistrationState.CONFIRM_REGISTRATION, for_what=FOR_USER))
 async def confirm_registration(event: BotEvent):
     event = SimpleBotEvent(event)
-    confirmation = await aliases.handle_confirmation(event)
+    confirmation = await aliases.handle_confirmation(event)  # todo: rewrite with match case?
 
     if confirmation is True:
         fsm_data = await FSM.get_data(event=event, for_what=FOR_USER)
-        point_locality = PointLocality(fsm_data["point_locality"])
-        org_name = fsm_data["org_name"]
-        phone_number = fsm_data["phone_number"]
 
-        user_data = await api_util.get_user_data(event)
-        name = f"{user_data.first_name} {user_data.last_name}"
         user_id = event.from_id
+        donor_name = fsm_data[FSMDataKey.DONOR_NAME]
+        phone_number = fsm_data[FSMDataKey.PHONE_NUMBER]
+        organization_name = fsm_data[FSMDataKey.ORGANIZATION_NAME]
+        municipality_name = fsm_data[FSMDataKey.MUNICIPALITY_NAME]
 
-        point = await Point.filter(locality=point_locality).first()
-        donator = await Donator.create(
-            name=name,
-            vk_user_id=user_id,
-            org_name=org_name,
+        municipality = await Municipality.find_one(Municipality.name == municipality_name)
+
+        logger.info(type(municipality))
+
+        donor = Donor(
+            user_id=user_id,
+            name=donor_name,
             phone_number=phone_number,
-            point=point,
+            organization_name=organization_name,
+            municipality=municipality,
         )
-        await donator.save()
-        logger.info(
-            f"Registered new donator: {name} (vk.com/{user_id}), {point_locality}. ID: {donator.donator_id}"
-        )
-        await event.answer("Чудесно! Регистрация на акцию пройдена успешно.")
+        await donor.save()
+
+        logger.info(f"registered a new donor: {donor}")
+        await event.answer("😺 Чудесно! Регистрация на акцию пройдена успешно.")
         await home.send_home(event)
         await FSM.set_state(state=HomeState.HOME, event=event, for_what=FOR_USER)
 
     elif confirmation is False:
-        await event.answer("Что-ж, давай попробуем сначала. Будь внимательней в этот раз!)")
-        await FSM.add_data(event=event, for_what=FOR_USER, state_data={"org_name": None})
-        await choose_city(event)
+        await event.answer("🤔 Что-ж, давай попробуем сначала. Будь внимательней в этот раз!)")
+        await FSM.add_data(
+            event=event,
+            for_what=FOR_USER,
+            state_data={
+                FSMDataKey.PHONE_NUMBER: None,
+                FSMDataKey.MUNICIPALITY_NAME: None,
+                FSMDataKey.ORGANIZATION_NAME: None,
+            },
+        )
+        await request_municipality(event)
+        await FSM.set_state(state=RegistrationState.SET_MUNICIPALITY, event=event, for_what=FOR_USER)

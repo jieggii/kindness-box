@@ -1,9 +1,10 @@
-.idea
+.idea/
 
-__pycache__
-__pypackages__
+__pycache__/
+__pypackages__/
 
 .pdm.toml
 .pdm-python
 
 .secrets/
+.mongo/

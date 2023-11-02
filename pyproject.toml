@@ -1,22 +1,21 @@
 [project]
-name = ""
+name = "bot"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "jieggii", email = "jieggii@protonmail.com"},
+    { name = "jieggii", email = "jieggii@protonmail.com" },
 ]
 dependencies = [
-#    "vkwave @ git+https://github.com/fscdev/vkwave.git@4c6945b",
+    #    "vkwave @ git+https://github.com/fscdev/vkwave.git@4c6945b",
     "vkwave @ git+https://github.com/fscdev/vkwave.git@50e1f75",
     "betterconf>=2.6.1",
     "tortoise-orm[asyncpg]>=0.19.2",
     "uvloop>=0.17.0",
-    "python-dotenv[cli]>=0.21.0",
+    "beanie>=1.23.1",
+    "loguru>=0.7.2",
 ]
 requires-python = ">=3.9"
-license = {text = "MIT"}
-[project.optional-dependencies]
-
+license = { text = "MIT" }
 [build-system]
 requires = ["pdm-pep517>=1.0.0"]
 build-backend = "pdm.pep517.api"
@@ -25,20 +24,19 @@ build-backend = "pdm.pep517.api"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 dev = [
-    "flake8>=5.0.4",
-    "black>=22.10.0",
-    "isort>=5.10.1",
-    "openpyxl>=3.0.10",
+    "black>=23.10.1",
+    "isort>=5.12.0",
+    "flake8>=6.1.0",
 ]
 
 [tool.pdm.scripts]
-fmt.shell = "isort ./app/ ./scripts/ && black ./app/ ./scripts/"
-lint = "flake8 ./app/ ./scripts/"
+fmt.shell = "isort ./bot/ ./scripts/ && black ./bot/ ./scripts/"
+start.shell = "BOT_ACCESS_TOKEN_FILE=./.secrets/bot/access_token BOT_GROUP_ID_FILE=./.secrets/bot/group_id MONGO_HOST=localhost MONGO_PORT=27017 MONGO_USERNAME_FILE=./.secrets/mongo/username MONGO_PASSWORD_FILE=./.secrets/mongo/password MONGO_DATABASE=kindness-box python -m bot"
 
 [tool.black]
-line-length = 100
-target-version = ["py310"]
+line-length = 120
+target-version = ["py311"]
 
 [tool.isort]
 profile = "black"
-line_length = 100
+line_length = 120

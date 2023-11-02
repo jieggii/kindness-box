@@ -5,7 +5,7 @@ from vkwave.bots.fsm import ForWhat, State
 
 from bot.fsm import FSM
 from bot.keyboards import YesNoKeyboard
-from bot.templates import INVALID_OPTION
+from bot.messages import INVALID_OPTION
 
 
 async def send_confirmation(
@@ -20,9 +20,7 @@ async def send_confirmation(
 
 async def handle_confirmation(
     event: SimpleBotEvent,
-) -> Optional[
-    bool
-]:  # todo?: вместо этого писать проверки на yes / no прямо в коде, так будет очевиднее
+) -> Optional[bool]:  # todo?: вместо этого писать проверки на yes / no прямо в коде, так будет очевиднее
     text = event.text
     if text == YesNoKeyboard.YES:
         return True

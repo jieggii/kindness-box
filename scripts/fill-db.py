@@ -6,13 +6,13 @@
     pdm run python scripts/init-db.py persons.xlsx
 
     XLSX table format:
-    id | Name and lastname | Age | Municipality | Gift description |
-     1     Ivan Ivanov       18     Костомукша    Описание подарка
+    | id | Name and lastname | Age | Municipality | Gift description |
+      1     Ivan Ivanov       18     Костомукша    Описание подарка
 
     Notes:
     - Run on an empty database
     - Count of person numbers in the XLSX document must be bigger than count of persons
-    - Check if locality names are correct in the XLSX document before running this script
+    - Check if municipality names are correct in the XLSX document before running this script
 
     Todos:
     - Use CSV format instead of XLSX
@@ -20,18 +20,38 @@
 
 import argparse
 import asyncio
+import csv
+import re
 import sys
 
-from bot import db
-from openpyxl import load_workbook
-from scripts.lib import postgres_credentials
+from loguru import logger
 
-ADDRESSES = {  # gift point addresses in different municipalities
-    db.models.PointLocality.PETROZAVODSK: "адрес в Петрозаводске",
-    db.models.PointLocality.KOSTOMUKSHA: "адрес в Костомукше",
-    db.models.PointLocality.MUEZERSKIY: "адрес в Муезерском",
-    db.models.PointLocality.KALEVALA: "адрес в Калевале"
-}
+from bot.database.init import init_database
+from bot.database.models import Donor, Municipality, Recipient
+
+MONGO_USERNAME_FILE = "./.secrets/mongo/username"
+MONGO_PASSWORD_FILE = "./.secrets/mongo/password"
+
+# column indexes:
+ID_COL = 0
+NAME_COL = 1
+AGE_COL = 2
+MUNICIPALITY_NAME_COL = 3
+GIFT_DESCRIPTION_COL = 4
+
+# regex patterns:
+ID_PATTERN = r"^\d{1,4}$"
+NAME_PATTERN = r"^[А-Я].+ [А-Я].+$"
+AGE_PATTERN = r"^\d{1,2}$"
+MUNICIPALITY_NAME_PATTERN = r"^[А-Я].+$"
+GIFT_DESCRIPTION_PATTERN = r"^[А-Я].+$"
+
+FAILURE_EXIT_STATUS = -1
+
+
+def read_file(file_path: str) -> str:
+    with open(file_path, "r") as file:
+        return file.read().strip()
 
 
 def parse_args():
@@ -40,11 +60,23 @@ def parse_args():
         description="Use this script to fill kindness-box database",
     )
 
-    parser.add_argument("--host", type=str, default="localhost", help="PostgreSQL host")
-    parser.add_argument("-p", "--port", type=int, default=5432, help="PostgreSQL port")
-    parser.add_argument("file", type=argparse.FileType("rb"), help="input XLSX file in special format")
+    database_group = parser.add_argument_group("database connection")
+    database_group.add_argument("--host", type=str, default="localhost", help="database host")
+    database_group.add_argument("-p", "--port", type=int, default=27017, help="database port")
+    database_group.add_argument("-d", "--database", type=str, default="kindness-box", help="database name")
+
+    parser_group = parser.add_argument_group("parser settings")
+    parser_group.add_argument("-l", "--last-id", type=int, default=None, help="id to interrupt parsing after")
+    parser_group.add_argument(
+        "-a", "--add", type=int, default=0, help="a number to be added to id to create identifier"
+    )
+    parser_group.add_argument("file", type=argparse.FileType("r"), help="input CSV file in special format")
 
     return parser.parse_args()
+
+
+def log_validation_error(filename: str, line_num: int, field_name: str, field_value: str, field_pattern: str) -> None:
+    logger.error(f"{filename}:{line_num} {field_name} '{field_value}' does not match regex pattern '{field_pattern}'")
 
 
 def main():
@@ -53,72 +85,125 @@ def main():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    print(f"[*] Reading PostgreSQL credentials from {postgres_credentials.SECRETS_DIR}")
-    user, password, db_name = postgres_credentials.read_postgres_credentials()
+    logger.info(f"reading mongo credentials")
+    username, password = read_file(MONGO_USERNAME_FILE), read_file(MONGO_PASSWORD_FILE)
 
-    print(
-        f"[*] Connecting to PostgreSQL at {user}@{args.host}:{args.port}/{db_name}"
+    logger.info(f"connecting to mongo database {args.database} at {username}@{args.host}:{args.port}")
+
+    loop.run_until_complete(
+        init_database(host=args.host, port=args.port, username=username, password=password, database=args.database)
     )
-    loop.run_until_complete(db.init(
-        host=args.host,
-        port=args.port,
-        user=user,
-        password=password,
-        db=db_name
-    ))
 
-    print("[*] Adding points to the database")
+    logger.info(f"{args.file.name}: reading")
 
-    points = {}
-    for i, municipality in enumerate(db.models.PointLocality):
-        point_id = i + 1
-        address = ""
+    reader = csv.reader(args.file)
+    rows = list(reader)[2:]  # skipping title and example row
 
-        try:
-            address = ADDRESSES[municipality]
-        except KeyError:
-            print(f"[!] Warning: no address set for municipality '{municipality.value}'")
+    municipality_names: list[str] = []
+    recipients: list[dict[str, str | int | None]] = []
 
-        point = db.models.Point(
-            point_id=point_id, locality=municipality.value, address=address
-        )
-        loop.run_until_complete(point.save())
-        points[municipality.value] = point
-        print(f'[+] Added new point {point}')
+    logger.info(f"{args.file.name}: validating")
+    validation_failed = False
+    for i, row in enumerate(rows):
+        line_num = i + 3
 
-    print(f"[*] Reading {args.file.name}")
-    wb = load_workbook(args.file)
-    ws = wb.active
-    rows = list(ws.rows)
+        id = row[ID_COL]  # noqa
+        name = row[NAME_COL]
+        age = row[AGE_COL]
+        municipality_name = row[MUNICIPALITY_NAME_COL]
+        gift_description = row[GIFT_DESCRIPTION_COL]
 
-    for row in rows[2:]:  # ignoring the first (title) row and the second (example) row
-        number = row[0].value
-        name = row[1].value
-        age = row[2].value
-        locality = row[3].value
-        gift = row[4].value
+        if not re.fullmatch(ID_PATTERN, id):
+            log_validation_error(args.file.name, line_num, "id", id, ID_PATTERN)
+            validation_failed = True
 
-        if not (number and name and age and locality and age):
-            print(
-                f"[!] Warning: it seems that end of the list is reached. Last person number: {int(number - 1)}."
+        if not re.fullmatch(NAME_PATTERN, name):
+            log_validation_error(args.file.name, line_num, "name", name, NAME_PATTERN)
+            validation_failed = True
+
+        if re.fullmatch(MUNICIPALITY_NAME_PATTERN, municipality_name):
+            if municipality_name not in municipality_names:
+                municipality_names.append(municipality_name)
+        else:
+            log_validation_error(
+                args.file.name,
+                line_num,
+                "municipality name",
+                municipality_name,
+                MUNICIPALITY_NAME_PATTERN,
             )
+            validation_failed = True
+
+        if not re.fullmatch(GIFT_DESCRIPTION_PATTERN, gift_description):
+            log_validation_error(
+                args.file.name,
+                line_num,
+                "gift description",
+                gift_description,
+                GIFT_DESCRIPTION_PATTERN,
+            )
+
+        recipients.append(
+            {
+                "identifier": int(id) + args.add,
+                "name": name,
+                "age": int(age),
+                "municipality_name": municipality_name,
+                "gift_description": gift_description,
+            }
+        )
+
+        if i + 1 == args.last_id:
+            logger.warning(f"{args.file.name}:{line_num} last id is set to {args.last_id}, skipping rows after it")
             break
 
-        number = int(number)
-        name = name.strip()
-        age = int(age)
-        locality = locality.strip()
-        gift = gift.strip()
+    logger.info(f"{args.file.name}: the following municipalities were found: {', '.join(municipality_names)}")
+    if validation_failed:
+        sys.exit(FAILURE_EXIT_STATUS)
 
-        if locality not in points.keys():
-            print(f'[!] Fatal error: unknown locality "{locality}" (person number: {number}).')
-            sys.exit(1)
+    option = input("Would you like to continue? (y/n) > ")  # this is needed to avoid typos in municipality names
+    if option.lower() not in ["y", "yes"]:
+        logger.info("aborted")
+        sys.exit()
 
-        person = db.models.Person(
-            person_id=number, name=name, age=age, gift=gift, point=points[locality]
+    # save non-stored municipalities:
+    for municipality_name in municipality_names:
+        if not loop.run_until_complete(Municipality.find_one(Municipality.name == municipality_name)):
+            logger.info(f"storing municipality '{municipality_name}' as it does not exist in the database")
+            municipality = Municipality(name=municipality_name, addresses=[])
+            loop.run_until_complete(municipality.save())
+
+    # save recipients:
+    for recipient_data in recipients:
+        identifier = recipient_data["identifier"]
+        name = recipient_data["name"]
+        age = recipient_data["age"]
+        municipality_name = recipient_data["municipality_name"]
+        gift_description = recipient_data["gift_description"]
+
+        # check if recipient already exists:
+        recipient = loop.run_until_complete(Recipient.find_one(Recipient.identifier == identifier))
+        if recipient:
+            logger.error(f"recipient {recipient} already exists")
+            sys.exit(FAILURE_EXIT_STATUS)
+
+        municipality = loop.run_until_complete(
+            Municipality.find_one(Municipality.name == municipality_name),
         )
-        loop.run_until_complete(person.save())
-        print(f"[+] Added new person {person}.")
+        if not municipality:
+            logger.error(f"municipality '{municipality_name}' was not found")
+
+        recipient = Recipient(
+            identifier=identifier,
+            name=name,
+            age=age,
+            municipality=municipality,
+            gift_description=gift_description,
+        )
+        result = loop.run_until_complete(recipient.save())
+        logger.info(f"stored a new recipient: {result}")
+
+    logger.info("done! don't forget to set municipality addresses in the database ;)")
 
 
 if __name__ == "__main__":

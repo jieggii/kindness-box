@@ -1,6 +1,6 @@
 from vkwave.bots import ButtonColor, Keyboard
 
-from bot.db.models import PointLocality
+from bot.database.models import Municipality
 
 
 class CancelKeyboard(Keyboard):
@@ -11,12 +11,12 @@ class CancelKeyboard(Keyboard):
         self.add_text_button(text=self.CANCEL, color=ButtonColor.SECONDARY)
 
 
-class HomeNoPersonsKeyboard(Keyboard):
+class HomeNoRecipientsKeyboard(Keyboard):
     EDIT_MY_LIST = "Выбрать людей"
     REJECT_PARTICIPATION = "Отказаться от участия"
 
     def __init__(self):
-        super(HomeNoPersonsKeyboard, self).__init__()
+        super(HomeNoRecipientsKeyboard, self).__init__()
         self.add_text_button(text=self.EDIT_MY_LIST, color=ButtonColor.PRIMARY)
         self.add_row()
         self.add_text_button(text=self.REJECT_PARTICIPATION, color=ButtonColor.SECONDARY)
@@ -50,12 +50,13 @@ class YesNoKeyboard(Keyboard):
         self.add_text_button(text=self.NO, color=ButtonColor.SECONDARY)
 
 
-class ChooseCityKeyboard(Keyboard):
-    def __init__(self):
-        super(ChooseCityKeyboard, self).__init__()
-        for i, locality in enumerate(PointLocality):
-            self.add_text_button(text=locality, color=ButtonColor.SECONDARY)
-            if (i + 1) % 2 == 0 and i < len(PointLocality) - 1:
+class ChooseMunicipalityKeyboard(Keyboard):
+    def __init__(self, municipality_names: list[str]):
+        super(ChooseMunicipalityKeyboard, self).__init__()
+
+        for i, name in enumerate(municipality_names):
+            self.add_text_button(text=name, color=ButtonColor.SECONDARY)
+            if (i + 1) % 2 == 0 and i < len(municipality_names) - 1:
                 self.add_row()
 
 
