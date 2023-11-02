@@ -1,8 +1,8 @@
 import asyncio
-import logging
 import sys
 
 import uvloop
+from loguru import logger
 from vkwave.bots import SimpleLongPollBot
 from vkwave.bots.core.dispatching import filters
 
@@ -16,12 +16,12 @@ def read_file(filepath: str) -> str:
         return file.read().strip()
 
 
-logging.basicConfig(level=logging.INFO)
-
+# install uvloop:
 uvloop.install()
-
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
+
+# initialize database:
 loop.run_until_complete(
     init_database(
         host=env.Mongo.HOST,
@@ -32,16 +32,19 @@ loop.run_until_complete(
     ),
 )
 
+# initialize bot:
 access_token = read_file(env.Bot.ACCESS_TOKEN_FILE)
 group_id = int(read_file(env.Bot.GROUP_ID_FILE))
 
-bot = SimpleLongPollBot(tokens=[access_token], group_id=group_id, uvloop=False)  # todo: try to make uvloop work
+bot = SimpleLongPollBot(tokens=[access_token], group_id=group_id)
 bot.router.registrar.add_default_filter(filters.EventTypeFilter("message_new"))
 
 bot.dispatcher.add_router(registration.router)
 bot.dispatcher.add_router(home.router)
 
 try:
+    logger.info("starting bot")
     bot.run_forever(ignore_errors=True)
+
 except KeyboardInterrupt:
     sys.exit()
