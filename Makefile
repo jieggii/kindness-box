@@ -1,35 +1,15 @@
-DEBUG_ENV = debug.env
-PROD_ENV = .env
+SECRETS_DIR := "./.secrets"
 
-#.PHONY: todo
-#todo:
-#	@echo "TODOs in the source code:"
-#	@grep -rn "todo" ./app/ ./scripts/
-#	@echo
-#	@echo "TODOs in the todo.txt file:"
-#	@cat todo.txt
+.PHONY: all
+all: help
 
-#.PHONY: debug
-#start-debug:
-#	pdm run dotenv -f $(DEBUG_ENV) run python -m app
+.PHONY: help
+help:
+	@echo "Commands: "
+	@echo "secrets - create secrets"
 
-#.PHONY: docker-build
-#docker-build:
-#	docker build --tag kindness-box .
-
-#.PHONY: docker-run
-#docker-run:
-#	docker run -d --network=host kindness-box:latest
-
-#.PHONY: init-db
-#init-db:
-#	pdm run python scripts/init-db.py --exec scripts/init-db.sql --env $(PROD_ENV) persons.xlsx
-
-#.PHONY: add-person
-#add-person:
-#	pdm run python scripts/add-person.py --env $(PROD_ENV)
-
-#.PHONY: backup-db
-#backup-db:
-#	mkdir -p backup
-#	pg_dump --user=kindness-box kindness-box > ./backup/$(shell date +%d.%m.%Y-%H:%M:%S).bak
+.PHONY: secrets
+secrets:
+	mkdir -p $(SECRETS_DIR)/bot $(SECRETS_DIR)/mongo
+	touch $(SECRETS_DIR)/bot/access_token $(SECRETS_DIR)/bot/group_id
+	touch $(SECRETS_DIR)/mongo/username $(SECRETS_DIR)/mongo/password
