@@ -48,7 +48,7 @@ def read_file(file_path: str) -> str:
         return file.read().strip()
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="init-db.py",
         description="Use this script to fill kindness-box database",
@@ -70,7 +70,11 @@ def parse_args():
 
 
 def log_validation_error(filename: str, line_num: int, field_name: str, field_value: str, field_pattern: str) -> None:
-    logger.error(f"{filename}:{line_num} {field_name} '{field_value}' does not match regex pattern '{field_pattern}'")
+    log_file_error(filename, line_num, f"{field_name} '{field_value}' does not match regex pattern '{field_pattern}'")
+
+
+def log_file_error(filename: str, line_num: int, message: str) -> None:
+    logger.error(f"{filename}:{line_num} {message}")
 
 
 def main():
@@ -95,7 +99,6 @@ def main():
 
     municipality_names: list[str] = []
     recipients: list[dict[str, str | int | None]] = []
-
     logger.info(f"{args.file.name}: validating")
     validation_failed = False
     for i, row in enumerate(rows):
@@ -107,6 +110,7 @@ def main():
         municipality_name = row[MUNICIPALITY_NAME_COL]
         gift_description = row[GIFT_DESCRIPTION_COL]
 
+        # check fields using regular expressions:
         if not re.fullmatch(ID_PATTERN, id):
             log_validation_error(args.file.name, line_num, "id", id, ID_PATTERN)
             validation_failed = True
@@ -137,6 +141,16 @@ def main():
                 GIFT_DESCRIPTION_PATTERN,
             )
 
+        identifier = int(id) + args.add
+
+        # check if recipient does not already exist:
+        recipient_exists = loop.run_until_complete(
+            Recipient.find_one(Recipient.identifier == identifier).exists()
+        )
+        if recipient_exists:
+            log_file_error(args.file.name, line_num, f"recipient with identifier {identifier} already exists")
+            validation_failed = True
+
         recipients.append(
             {
                 "identifier": int(id) + args.add,
@@ -147,12 +161,13 @@ def main():
             }
         )
 
-        if i + 1 == args.last_id:
+        if i + 1 == args.last_id:  # skip next rows if reached the indicated last id
             logger.warning(f"{args.file.name}:{line_num} last id is set to {args.last_id}, skipping rows after it")
             break
 
     logger.info(f"{args.file.name}: the following municipalities were found: {', '.join(municipality_names)}")
     if validation_failed:
+        logger.info("exiting due to previous validation errors (no write operations were executed)")
         sys.exit(FAILURE_EXIT_STATUS)
 
     option = input("Would you like to continue? (y/n) > ")  # this is needed to avoid typos in municipality names
@@ -174,12 +189,6 @@ def main():
         age = recipient_data["age"]
         municipality_name = recipient_data["municipality_name"]
         gift_description = recipient_data["gift_description"]
-
-        # check if recipient already exists:
-        recipient = loop.run_until_complete(Recipient.find_one(Recipient.identifier == identifier))
-        if recipient:
-            logger.error(f"recipient {recipient} already exists")
-            sys.exit(FAILURE_EXIT_STATUS)
 
         municipality = loop.run_until_complete(
             Municipality.find_one(Municipality.name == municipality_name),
