@@ -1,10 +1,11 @@
 #!/usr/bin/bash
 
+HOST="localhost"
 BACKUP_HOME="./.backups"
 BACKUP_NAME="$(date "+%d.%m.%y-%H:%M:%S")"
 
 echo "[*] Dumping mongo database..."
-mongodump --host localhost \
+mongodump --host "$HOST" \
   --port 27017 \
   --username "$(cat ./.secrets/mongo/username)" \
   --password "$(cat ./.secrets/mongo/password)" \
