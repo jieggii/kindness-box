@@ -165,8 +165,6 @@ async def confirm_registration(event: BotEvent):
 
             municipality = await Municipality.find_one(Municipality.name == municipality_name)
 
-            logger.info(type(municipality))
-
             donor = Donor(
                 user_id=user_id,
                 name=donor_name,

@@ -92,7 +92,7 @@ async def send_all_recipients_list(event: BotEvent):
         f"от 1 до {settings.MAX_CHOSEN_RECIPIENTS} человек, которым будешь покупать подарок"
         f"{f' от имени организации <<{donor.organization_name}>>.' if donor.organization_name else '.'}"
         "\n"
-        "Например: 1, 7, 3.",
+        "Например: 9007, 3002, 1004",
         keyboard=kbd.get_keyboard(),
     )
 
