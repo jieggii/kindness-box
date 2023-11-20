@@ -46,7 +46,7 @@ async def request_municipality_name(event: BotEvent):
     municipalities = await Municipality.find_all().to_list()
     kbd = ChooseMunicipalityKeyboard([municipality.name for municipality in municipalities])
     await event.answer(
-        "Выбери населенный пункт, в котором ты будешь принимать участие в акции:",
+        "📍 Выбери населенный пункт, в котором ты будешь принимать участие в акции.",
         keyboard=kbd.get_keyboard(),
     )
 
@@ -62,7 +62,7 @@ async def set_municipality_name(event: BotEvent):
 
     kbd = ChooseOrganizationOptionKeyboard()
     await event.answer(
-        "Ты будешь участвовать в акции от своего имени или от имени организации?",
+        "🏣 Ты будешь участвовать в акции от своего имени или от имени организации?",
         keyboard=kbd.get_keyboard(),
     )
     await FSM.add_data(event, for_what=FOR_USER, state_data={FSMDataKey.MUNICIPALITY_NAME: municipality_name})
@@ -108,7 +108,7 @@ async def request_phone_number(event: BotEvent):
     event = SimpleBotEvent(event)
     kbd = Keyboard()
     await event.answer(
-        "Отлично! Теперь, пожалуйста, отправь номер телефона по которому, "
+        "📞 Отлично! Теперь, пожалуйста, отправь номер телефона по которому, "
         "в случае чего, волонтеры смогли бы с тобой связаться.",
         keyboard=kbd.get_empty_keyboard(),
     )
