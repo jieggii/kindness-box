@@ -20,7 +20,7 @@ async def fetch_current_user_name(event: SimpleBotEvent) -> (str, str):
     return data.first_name, data.last_name
 
 
-def batch_message(message: str, batch_size: int = 17) -> typing.Generator[str, None, None]:
+def batch_message(message: str, batch_size: int = 30) -> typing.Generator[str, None, None]:
     """Splits message into batches.
 
     Message batching is needed due to VK message length limit.
@@ -34,4 +34,4 @@ def batch_message(message: str, batch_size: int = 17) -> typing.Generator[str, N
     """
     lines = message.split("\n")
     for i in range(0, len(lines), batch_size):
-        yield "\n".join(lines[i : batch_size + i])
+        yield "\n".join(lines[i: batch_size + i])
