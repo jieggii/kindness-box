@@ -140,6 +140,7 @@ def main():
                 gift_description,
                 GIFT_DESCRIPTION_PATTERN,
             )
+            validation_failed = True
 
         identifier = int(id) + args.add
 
