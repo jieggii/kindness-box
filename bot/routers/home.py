@@ -209,14 +209,14 @@ async def home(event: BotEvent):
                 await send_all_recipients_list(event)
 
             case HomeKeyboard.MY_LIST:
-                message = "Список людей, которым тебе нужно купить подарки:\n"
+                message = "🎁 Список людей, которым тебе нужно купить подарки:\n"
                 for recipient in recipients:
                     message += f"- {fmt.recipient_name(recipient.name)} {recipient.age} лет (#{recipient.identifier}) -- {recipient.gift_description}.\n"
                 await event.answer(message)
 
             case HomeKeyboard.INFO:
                 message = (
-                    f"Отнести подарки в населенном пункте {donor.municipality.name} можно по следующему адресу:"
+                    f"📍 Отнести подарки в населенном пункте {donor.municipality.name} можно по следующему адресу:"
                     "\n"
                     f"{donor.municipality.address}"
                     "\n"

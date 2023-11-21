@@ -24,10 +24,14 @@ async def start(event: BotEvent):
     if not donor:
         first_name, last_name = await vk_util.fetch_current_user_name(event)
         await event.answer(
-            f"👋 Привет, {first_name}! Я бот для проведения акции <<Коробочка доброты>>.\n\n"
+            f"👋 Привет, {first_name}! Я бот для проведения акции <<Коробочка доброты>>."
+            "\n"
+            "\n"
             "С моей помощью ты сможешь выбрать одного или нескольких человек с "
-            "ограниченными возможностями, которым будешь дарить подарок.\n\n"
-            f"Обрати внимание, что выбранные подарки будет необходимо принести на точку сбора до {settings.DEADLINE}.\n\n"
+            "ограниченными возможностями, которым будешь дарить подарок."
+            "\n"
+            "\n"
+            f"📅 Обрати внимание, что выбранные подарки будет необходимо принести на точку сбора до {settings.DEADLINE}.\n\n"
             "Но, для начала, мне нужно узнать некоторую информацию о тебе."
         )
         await FSM.set_state(state=RegistrationState.SET_MUNICIPALITY, event=event, for_what=FOR_USER)
@@ -36,7 +40,6 @@ async def start(event: BotEvent):
         logger.info(f"a new user {first_name} {last_name} (vk.com/id{user_id}) started registration")
         await request_municipality_name(event)
     else:
-        logger.warning(f"existing donor {donor} without state has started registration, sending him home")
         await home.send_home(event)
 
 
@@ -136,7 +139,7 @@ async def request_registration_confirmation(event: BotEvent):
     organization_name = fsm_data[FSMDataKey.ORGANIZATION_NAME]
     phone_number = fsm_data[FSMDataKey.PHONE_NUMBER]
 
-    message = "Давай проверим данные:\n" f"- Населенный пункт: {municipality_name}\n"
+    message = "✏️ Давай проверим данные:\n" f"- Населенный пункт: {municipality_name}\n"
     if organization_name:
         message += f"- Организация: <<{organization_name}>>\n"
     else:
@@ -175,7 +178,7 @@ async def confirm_registration(event: BotEvent):
             await donor.save()
 
             logger.info(f"registered a new donor: {donor}")
-            await event.answer("😺 Чудесно! Регистрация на акцию пройдена успешно.")
+            await event.answer("✨ Чудесно! Регистрация на акцию пройдена успешно.")
             await home.send_home(event)
             await FSM.set_state(state=HomeState.HOME, event=event, for_what=FOR_USER)
 
