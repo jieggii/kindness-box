@@ -218,7 +218,8 @@ async def home(event: BotEvent):
                 message = (
                     f"📍 Отнести подарки в населенном пункте {donor.municipality.name} можно по следующему адресу:"
                     "\n"
-                    f"{donor.municipality.address}"
+                    f"{donor.municipality.address}."
+                    "\n"
                     "\n"
                     "🚨 Важно:"
                     "\n"
