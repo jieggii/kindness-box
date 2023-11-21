@@ -34,7 +34,7 @@ async def send_home(event: BotEvent):
     await FSM.set_state(state=HomeState.HOME, event=event, for_what=FOR_USER)
 
     # if the current donor has at least one recipient:
-    if await Recipient.find_one(Recipient.donor != None):  # noqa
+    if await Recipient.find_one(Recipient.donor.id == donor.id).exists():  # noqa
         kbd = HomeKeyboard()
         await event.answer(
             "Ты в главном меню. Пожалуйста, выбери действие с помощью клавиатуры.",
