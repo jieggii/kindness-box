@@ -38,6 +38,9 @@ ID_PATTERN = r"^\d{1,4}$"
 NAME_PATTERN = r"^[А-Я].+ [А-Я].+$"
 AGE_PATTERN = r"^\d{1,2}$"
 MUNICIPALITY_NAME_PATTERN = r"^[А-Я].+$"
+
+# todo: check if gift description starts with a lowercase letter and does not
+# contain a dot in the end
 GIFT_DESCRIPTION_PATTERN = r"^.+$"
 
 FAILURE_EXIT_STATUS = -1
