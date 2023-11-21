@@ -92,7 +92,7 @@ async def send_all_recipients_list(event: BotEvent):
         f"от 1 до {settings.MAX_CHOSEN_RECIPIENTS} человек, которым будешь покупать подарок"
         f"{f' от имени организации <<{donor.organization_name}>>.' if donor.organization_name else '.'}"
         "\n"
-        "Например: 9007, 3002, 1004",
+        f"Например: {messages.IDENTIFIERS_LIST_EXAMPLE}.",
         keyboard=kbd.get_keyboard(),
     )
 
@@ -108,7 +108,10 @@ async def choose_recipients(event: BotEvent):
     try:
         recipient_identifiers = parsers.parse_recipient_identifiers(event.text)
     except parsers.ParsingError:
-        await event.answer("Я не понимаю тебя! Перечисли номера людей через запятую.\n" "Например: 105, 107, 103")
+        await event.answer(
+            "Я не понимаю тебя! Перечисли номера людей через запятую."
+            "\n"
+            f"Например: {messages.IDENTIFIERS_LIST_EXAMPLE}.")
         return
 
     if len(recipient_identifiers) > settings.MAX_CHOSEN_RECIPIENTS:
