@@ -1,5 +1,5 @@
 # deadline (will be displayed in a message):
-DEADLINE = "16 декабря 2022 года"
+DEADLINE = "22 декабря 2023 года"
 
 # max length of organization name:
 MAX_ORGANIZATION_NAME_LENGTH = 500
