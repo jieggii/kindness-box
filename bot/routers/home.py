@@ -215,10 +215,10 @@ async def home(event: BotEvent):
                 await event.answer(message)
 
             case HomeKeyboard.INFO:
-                message = f"Отнести подарки в населенном пункте {donor.municipality.name} можно по следующим адресам:\n"
-                for address in donor.municipality.addresses:
-                    message += f"- {address}\n"
-                message += (
+                message = (
+                    f"Отнести подарки в населенном пункте {donor.municipality.name} можно по следующему адресу:"
+                    "\n"
+                    f"{donor.municipality.address}"
                     "\n"
                     "🚨 Важно:"
                     "\n"

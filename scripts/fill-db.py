@@ -183,7 +183,7 @@ def main():
     for municipality_name in municipality_names:
         if not loop.run_until_complete(Municipality.find_one(Municipality.name == municipality_name)):
             logger.info(f"storing municipality '{municipality_name}' as it does not exist in the database")
-            municipality = Municipality(name=municipality_name, addresses=[])
+            municipality = Municipality(name=municipality_name, address="")
             loop.run_until_complete(municipality.save())
 
     # save recipients:

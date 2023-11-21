@@ -5,13 +5,13 @@ from beanie import Document, Link
 
 class Municipality(Document):
     name: str
-    addresses: list[str]
+    address: str
 
     class Settings:
         name = "municipalities"
 
     def __str__(self):
-        return f"Municipality({self.id}, {self.name}, {self.addresses})"
+        return f"Municipality({self.id}, {self.name}, {self.address})"
 
 
 class Donor(Document):
