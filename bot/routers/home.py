@@ -79,7 +79,7 @@ async def send_all_recipients_list(event: BotEvent):
             else:
                 message += f"(подарок уже покупает @id{recipient.donor.user_id}({recipient.donor.name})) "
 
-        message += f"-- {recipient.gift_description}\n\n"
+        message += f"-- {recipient.gift_description}.\n\n"
 
     await FSM.set_state(state=HomeState.CHOOSE_RECIPIENTS, event=event, for_what=FOR_USER)
 
@@ -152,7 +152,7 @@ async def choose_recipients(event: BotEvent):
 
     message = "Отлично, теперь тебе нужно купить и упаковать подарки для этих людей:\n"
     for recipient in recipients:
-        message += f"- {fmt.recipient_name(recipient.name)} (#{recipient.identifier}) -- {recipient.gift_description}\n"
+        message += f"- {fmt.recipient_name(recipient.name)} (#{recipient.identifier}) -- {recipient.gift_description}.\n"
 
     message += (
         "\n"
@@ -208,7 +208,7 @@ async def home(event: BotEvent):
             case HomeKeyboard.MY_LIST:
                 message = "Список людей, которым тебе нужно купить подарки:\n"
                 for recipient in recipients:
-                    message += f"- {fmt.recipient_name(recipient.name)} {recipient.age} лет (#{recipient.identifier}) -- {recipient.gift_description}\n"
+                    message += f"- {fmt.recipient_name(recipient.name)} {recipient.age} лет (#{recipient.identifier}) -- {recipient.gift_description}.\n"
                 await event.answer(message)
 
             case HomeKeyboard.INFO:
@@ -230,12 +230,8 @@ async def home(event: BotEvent):
             case HomeKeyboard.I_BROUGHT_GIFTS:
                 message = "Проверь еще раз, что ты принес подарки для всех получателей:\n"
                 for recipient in recipients:
-                    message += f"- {recipient.name} (#{recipient.identifier}) - {recipient.gift_description}\n"
+                    message += f"- {recipient.name} (#{recipient.identifier}) -- {recipient.gift_description}.\n"
 
-                message += (
-                    "\n"
-                    f"⚠️ Нажимай на кнопку <<{ConfirmIBroughtGiftsKeyboard.TRUE}>> только тогда, когда точно в этом уверен(а)!"
-                )
                 kbd = ConfirmIBroughtGiftsKeyboard()
                 await event.answer(message, keyboard=kbd.get_keyboard())
                 await FSM.set_state(state=HomeState.CONFIRM_I_BROUGHT_GIFTS, event=event, for_what=ForWhat.FOR_USER)
@@ -246,7 +242,7 @@ async def home(event: BotEvent):
             case _:
                 await event.answer(messages.INVALID_OPTION)
 
-    else:
+    else:  # if there are no recipients
         match event.text:
             case NoRecipientsHomeKeyboard.EDIT_MY_LIST:
                 await send_all_recipients_list(event)
