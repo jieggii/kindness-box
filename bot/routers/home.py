@@ -1,4 +1,5 @@
 from datetime import datetime
+import pytz
 
 from beanie import DeleteRules
 from beanie.operators import In
@@ -23,7 +24,8 @@ FOR_USER = ForWhat.FOR_USER
 router = DefaultRouter()
 reg = router.registrar
 
-_STATS_TIME_FORMAT = "%e %B %H:%M:%S"
+_STATS_TIMEZONE = pytz.timezone("Europe/Moscow")
+_STATS_TIME_FORMAT = "%d.%m.%y %H:%M:%S"
 
 
 async def send_home(event: BotEvent):
@@ -175,7 +177,7 @@ async def choose_recipients(event: BotEvent):
 
 
 async def send_stats(event: SimpleBotEvent):
-    now = datetime.now()
+    now = datetime.now(_STATS_TIMEZONE)
     message = f"Статистика по всем муниципалитетам ({now.strftime(_STATS_TIME_FORMAT)}):" "\n"
 
     async for municipality in Municipality.find_all():
