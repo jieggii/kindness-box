@@ -148,9 +148,7 @@ def main():
         identifier = int(id) + args.add
 
         # check if recipient does not already exist:
-        recipient_exists = loop.run_until_complete(
-            Recipient.find_one(Recipient.identifier == identifier).exists()
-        )
+        recipient_exists = loop.run_until_complete(Recipient.find_one(Recipient.identifier == identifier).exists())
         if recipient_exists:
             log_file_error(args.file.name, line_num, f"recipient with identifier {identifier} already exists")
             validation_failed = True

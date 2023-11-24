@@ -1,10 +1,10 @@
 import argparse
 import asyncio
-from bot.database.models import Municipality, Recipient
-
-from bot.database.init import init_database
 
 from loguru import logger
+
+from bot.database.init import init_database
+from bot.database.models import Municipality, Recipient
 
 MONGO_USERNAME_FILE = "./.secrets/mongo/username"
 MONGO_PASSWORD_FILE = "./.secrets/mongo/password"
@@ -61,11 +61,11 @@ def main():
         name=args.name,
         age=args.age,
         gift_description=args.gift,
-        municipality=municipalities[municipality_number - 1]
+        municipality=municipalities[municipality_number - 1],
     )
     result = loop.run_until_complete(recipient.save())
     print(result)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

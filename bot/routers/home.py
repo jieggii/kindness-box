@@ -115,7 +115,8 @@ async def choose_recipients(event: BotEvent):
         await event.answer(
             "Я не понимаю тебя! Перечисли номера людей через запятую."
             "\n"
-            f"Например: {messages.IDENTIFIERS_LIST_EXAMPLE}.")
+            f"Например: {messages.IDENTIFIERS_LIST_EXAMPLE}."
+        )
         return
 
     if len(recipient_identifiers) > settings.MAX_CHOSEN_RECIPIENTS:
@@ -159,7 +160,9 @@ async def choose_recipients(event: BotEvent):
 
     message = "Отлично, теперь тебе нужно купить и упаковать подарки для этих людей:\n"
     for recipient in recipients:
-        message += f"- {fmt.recipient_name(recipient.name)} (#{recipient.identifier}) -- {recipient.gift_description}.\n"
+        message += (
+            f"- {fmt.recipient_name(recipient.name)} (#{recipient.identifier}) -- {recipient.gift_description}.\n"
+        )
 
     message += (
         "\n"
@@ -173,10 +176,7 @@ async def choose_recipients(event: BotEvent):
 
 async def send_stats(event: SimpleBotEvent):
     now = datetime.now()
-    message = (
-        f"Статистика по всем муниципалитетам ({now.strftime(_STATS_TIME_FORMAT)}):"
-        "\n"
-    )
+    message = f"Статистика по всем муниципалитетам ({now.strftime(_STATS_TIME_FORMAT)}):" "\n"
 
     async for municipality in Municipality.find_all():
         total_recipients = 0
