@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from beanie import DeleteRules
 from beanie.operators import In
 from loguru import logger
@@ -20,6 +22,8 @@ FOR_USER = ForWhat.FOR_USER
 
 router = DefaultRouter()
 reg = router.registrar
+
+_STATS_TIME_FORMAT = "%e %B %H:%M:%S"
 
 
 async def send_home(event: BotEvent):
@@ -168,7 +172,11 @@ async def choose_recipients(event: BotEvent):
 
 
 async def send_stats(event: SimpleBotEvent):
-    message = "Статистика по всем муниципалитетам:\n"
+    now = datetime.now()
+    message = (
+        f"Статистика по всем муниципалитетам ({now.strftime(_STATS_TIME_FORMAT)}):"
+        "\n"
+    )
 
     async for municipality in Municipality.find_all():
         total_recipients = 0
@@ -203,7 +211,7 @@ async def home(event: BotEvent):
         await send_stats(event)
         return
 
-    if recipients:  # if there is at least one recipient
+    if recipients:  # if the donor has at least one recipient
         match event.text:
             case HomeKeyboard.EDIT_MY_LIST:
                 await send_all_recipients_list(event)
@@ -246,7 +254,7 @@ async def home(event: BotEvent):
             case _:
                 await event.answer(messages.INVALID_OPTION)
 
-    else:  # if there are no recipients
+    else:  # if donor has no recipients
         match event.text:
             case NoRecipientsHomeKeyboard.EDIT_MY_LIST:
                 await send_all_recipients_list(event)
@@ -317,5 +325,5 @@ async def confirm_i_brought_gifts(event: BotEvent):
 @reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.FINISH, for_what=FOR_USER))
 async def finish(event: BotEvent):
     event = SimpleBotEvent(event)
-    if event.text == "статистика":
+    if event.text.lower() == "статистика":
         await send_stats(event)
