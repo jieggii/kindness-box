@@ -1,6 +1,6 @@
 from datetime import datetime
-import pytz
 
+import pytz
 from beanie import DeleteRules
 from beanie.operators import In
 from loguru import logger
