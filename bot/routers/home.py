@@ -13,9 +13,9 @@ from bot.fsm import FSM, HomeState
 from bot.keyboards.common import YesNoKeyboard
 from bot.keyboards.home import (
     CancelKeyboard,
-    ConfirmIBroughtGiftsKeyboard,
+    ConfirmGiftsDeliveryKeyboard,
     HomeKeyboard,
-    NoRecipientsHomeKeyboard,
+    HomeKeyboardNoRecipients,
     StartKeyboard,
 )
 
@@ -25,7 +25,7 @@ router = DefaultRouter()
 reg = router.registrar
 
 _STATS_TIMEZONE = pytz.timezone("Europe/Moscow")
-_STATS_TIME_FORMAT = "%d.%m.%y %H:%M:%S"
+_STATS_TIME_FORMAT = "%d.%m.%y %H:%M"
 
 
 async def send_home(event: BotEvent):
@@ -48,7 +48,7 @@ async def send_home(event: BotEvent):
         )
 
     else:
-        kbd = NoRecipientsHomeKeyboard()
+        kbd = HomeKeyboardNoRecipients()
         await event.answer(
             "Теперь ты в главном меню. "
             "Ты можешь выбрать людей, которым будешь дарить подарки, "
@@ -246,7 +246,7 @@ async def home(event: BotEvent):
                 for recipient in recipients:
                     message += f"- {recipient.name} (#{recipient.identifier}) -- {recipient.gift_description}.\n"
 
-                kbd = ConfirmIBroughtGiftsKeyboard()
+                kbd = ConfirmGiftsDeliveryKeyboard()
                 await event.answer(message, keyboard=kbd.get_keyboard())
                 await FSM.set_state(state=HomeState.CONFIRM_I_BROUGHT_GIFTS, event=event, for_what=ForWhat.FOR_USER)
 
@@ -258,10 +258,10 @@ async def home(event: BotEvent):
 
     else:  # if donor has no recipients
         match event.text:
-            case NoRecipientsHomeKeyboard.EDIT_MY_LIST:
+            case HomeKeyboardNoRecipients.EDIT_MY_LIST:
                 await send_all_recipients_list(event)
 
-            case NoRecipientsHomeKeyboard.REJECT_PARTICIPATION:
+            case HomeKeyboardNoRecipients.REJECT_PARTICIPATION:
                 await send_rejection_confirmation(event)
 
             case _:
@@ -308,7 +308,7 @@ async def confirm_rejection(event: BotEvent):
 async def confirm_i_brought_gifts(event: BotEvent):
     event = SimpleBotEvent(event)
     match event.text:
-        case ConfirmIBroughtGiftsKeyboard.TRUE:
+        case ConfirmGiftsDeliveryKeyboard.TRUE:
             donor = await Donor.find_one(Donor.user_id == event.from_id)
             donor.brought_gifts = True
             await donor.save()
@@ -317,7 +317,7 @@ async def confirm_i_brought_gifts(event: BotEvent):
             await event.answer("🥳 Ура! Спасибо огромное за участие в акции <3", keyboard=kbd.get_empty_keyboard())
             await FSM.set_state(state=HomeState.FINISH, event=event, for_what=FOR_USER)
 
-        case ConfirmIBroughtGiftsKeyboard.FALSE:
+        case ConfirmGiftsDeliveryKeyboard.FALSE:
             await send_home(event)
 
         case _:
