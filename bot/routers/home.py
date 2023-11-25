@@ -247,6 +247,7 @@ async def send_stats(event: SimpleBotEvent):
     message = f"Статистика на {now.strftime(_STATS_TIME_FORMAT)}:\n"
 
     total_donors = 0
+    total_recipients = 0
     total_chosen_recipients = 0
 
     async for municipality in Municipality.find_all():
@@ -265,6 +266,7 @@ async def send_stats(event: SimpleBotEvent):
             recipients += 1
 
         total_donors += donors
+        total_recipients += recipients
         total_chosen_recipients += chosen_recipients
 
         message += (
