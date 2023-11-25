@@ -17,4 +17,4 @@ secrets:
 
 .PHONY: redeploy
 redeploy:
-	git pull && docker compose build && docker copmpose down && docker compose up -d
+	git pull && docker compose build && docker compose down && docker compose up -d
