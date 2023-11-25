@@ -247,7 +247,7 @@ async def send_stats(event: SimpleBotEvent):
     message = f"Статистика на {now.strftime(_STATS_TIME_FORMAT)}:\n"
 
     total_donors = 0
-    total_recipients = 0
+    total_chosen_recipients = 0
 
     async for municipality in Municipality.find_all():
         donors = await Donor.find(Donor.municipality.id == municipality.id).count()
@@ -265,7 +265,7 @@ async def send_stats(event: SimpleBotEvent):
             recipients += 1
 
         total_donors += donors
-        total_recipients += recipients
+        total_chosen_recipients += chosen_recipients
 
         message += (
             f"{municipality.name}:"
@@ -274,7 +274,7 @@ async def send_stats(event: SimpleBotEvent):
             "\n"
             f"- Принесено {satisfied_recipients}/{chosen_recipients} подарков."
             "\n"
-            f"- 1 участник акции в среднем выбрал {round(recipients / donors, 2)} человек."
+            f"- 1 участник акции в среднем выбрал {round(chosen_recipients / donors, 2)} человек."
             "\n"
             "\n"
         )
@@ -286,7 +286,7 @@ async def send_stats(event: SimpleBotEvent):
         "\n"
         f"- Зарегистрировано {total_recipients} получателей."
         "\n"
-        f"- 1 участник акции в среднем выбрал {round(total_donors / total_recipients, 2)} человек."
+        f"- 1 участник акции в среднем выбрал {round(total_chosen_recipients / total_donors, 2)} человек."
     )
 
     await event.answer(message)
