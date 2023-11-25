@@ -276,7 +276,7 @@ async def send_stats(event: SimpleBotEvent):
             "\n"
             f"- Принесено {satisfied_recipients}/{chosen_recipients} подарков."
             "\n"
-            f"- 1 участник акции в среднем выбрал {round(chosen_recipients / donors, 2)} человек."
+            f"- 1 участник акции в среднем выбрал {round(chosen_recipients / donors, 2) if donors != 0 else 0} человек."
             "\n"
             "\n"
         )
@@ -288,7 +288,7 @@ async def send_stats(event: SimpleBotEvent):
         "\n"
         f"- Зарегистрировано {total_recipients} получателей."
         "\n"
-        f"- 1 участник акции в среднем выбрал {round(total_chosen_recipients / total_donors, 2)} человек."
+        f"- 1 участник акции в среднем выбрал {round(total_chosen_recipients / total_donors, 2) if total_donors != 0 else 0} человек."
     )
 
     await event.answer(message)
