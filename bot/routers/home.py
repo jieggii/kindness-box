@@ -32,12 +32,10 @@ async def send_home(event: BotEvent):
     event = SimpleBotEvent(event)
     donor = await Donor.find_one(Donor.user_id == event.from_id)
 
-    if donor.brought_gifts:
+    if donor.brought_gifts:  # needed as far as state is not stored persistently
         logger.warning("message from donor who has already brought gifts, settings state to FINISH")
         await FSM.set_state(state=HomeState.FINISH, event=event, for_what=FOR_USER)
         return
-
-    await FSM.set_state(state=HomeState.HOME, event=event, for_what=FOR_USER)
 
     # if the current donor has at least one recipient:
     if await Recipient.find_one(Recipient.donor.id == donor.id).exists():  # noqa
@@ -55,6 +53,74 @@ async def send_home(event: BotEvent):
             "либо отказаться от участия в акции, если ты вдруг передумал(а)!",
             keyboard=kbd.get_keyboard(),
         )
+
+    await FSM.set_state(state=HomeState.HOME, event=event, for_what=FOR_USER)
+
+
+@reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.HOME, for_what=FOR_USER))
+async def home(event: BotEvent):
+    event = SimpleBotEvent(event)
+    donor = await Donor.find_one(Donor.user_id == event.from_id, fetch_links=True)
+
+    recipients = await Recipient.find(Recipient.donor.id == donor.id, fetch_links=True).to_list()
+
+    if event.text.lower() == "статистика":
+        await send_stats(event)
+        return
+
+    if recipients:  # if the donor has at least one recipient
+        match event.text:
+            case HomeKeyboard.EDIT_MY_LIST:
+                await send_all_recipients_list(event)
+
+            case HomeKeyboard.MY_LIST:
+                message = "🎁 Список людей, которым тебе нужно купить подарки:\n"
+                for recipient in recipients:
+                    message += f"- {fmt.recipient_name(recipient.name)} {recipient.age} лет (#{recipient.identifier}) -- {recipient.gift_description}.\n"
+                await event.answer(message)
+
+            case HomeKeyboard.INFO:
+                message = (
+                    f"📍 Отнести подарки в населенном пункте {donor.municipality.name} можно по следующему адресу:"
+                    "\n"
+                    f"{donor.municipality.address}."
+                    "\n"
+                    "\n"
+                    "🚨 Важно:"
+                    "\n"
+                    f"1. Подарки следует принести до {settings.DEADLINE}."
+                    f"\n"
+                    "2. На подарке должны быть подписаны имя получателя и его идентификационный номер в системе."
+                    "\n"
+                    f"Эту информацию можно узнать, нажав на кнопку <<{HomeKeyboard.MY_LIST}>>."
+                )
+                await event.answer(message)
+
+            case HomeKeyboard.I_BROUGHT_GIFTS:
+                message = "Проверь еще раз, что ты принес подарки для всех получателей:\n"
+                for recipient in recipients:
+                    message += f"- {recipient.name} (#{recipient.identifier}) -- {recipient.gift_description}.\n"
+
+                kbd = ConfirmGiftsDeliveryKeyboard()
+                await event.answer(message, keyboard=kbd.get_keyboard())
+                await FSM.set_state(state=HomeState.CONFIRM_GIFTS_DELIVERY, event=event, for_what=ForWhat.FOR_USER)
+
+            case HomeKeyboard.REJECT_PARTICIPATION:
+                await send_rejection_confirmation(event)
+
+            case _:
+                await event.answer(messages.INVALID_OPTION)
+
+    else:  # if donor has no recipients
+        match event.text:
+            case HomeKeyboardNoRecipients.EDIT_MY_LIST:
+                await send_all_recipients_list(event)
+
+            case HomeKeyboardNoRecipients.REJECT_PARTICIPATION:
+                await send_rejection_confirmation(event)
+
+            case _:
+                await event.answer(messages.INVALID_OPTION)
 
 
 async def send_all_recipients_list(event: BotEvent):
@@ -87,8 +153,6 @@ async def send_all_recipients_list(event: BotEvent):
 
         message += f"-- {recipient.gift_description}.\n\n"
 
-    await FSM.set_state(state=HomeState.CHOOSE_RECIPIENTS, event=event, for_what=FOR_USER)
-
     for batch in vk_util.batch_message(message):
         await event.answer(batch)
 
@@ -101,6 +165,8 @@ async def send_all_recipients_list(event: BotEvent):
         f"Например: {messages.IDENTIFIERS_LIST_EXAMPLE}.",
         keyboard=kbd.get_keyboard(),
     )
+
+    await FSM.set_state(state=HomeState.CHOOSE_RECIPIENTS, event=event, for_what=FOR_USER)
 
 
 @reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.CHOOSE_RECIPIENTS, for_what=FOR_USER))
@@ -178,7 +244,7 @@ async def choose_recipients(event: BotEvent):
 
 async def send_stats(event: SimpleBotEvent):
     now = datetime.now(_STATS_TIMEZONE)
-    message = f"Статистика по всем муниципалитетам ({now.strftime(_STATS_TIME_FORMAT)}):" "\n"
+    message = f"Статистика на {now.strftime(_STATS_TIME_FORMAT)}:\n"
 
     async for municipality in Municipality.find_all():
         total_recipients = 0
@@ -199,73 +265,16 @@ async def send_stats(event: SimpleBotEvent):
             f"- Принесено {satisfied_recipients}/{chosen_recipients} подарков.\n\n"
         )
 
+    donors_count = await Donor.find_all().count()
+    recipients_count = await Recipient.find_all().count()
+
+    message += (
+        "Общая статистика:\n"
+        f"Зарегистрировано участников: {donors_count}\n"
+        f"Зарегистрировано получателей: {recipients_count}\n"
+    )
+
     await event.answer(message)
-
-
-@reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.HOME, for_what=FOR_USER))
-async def home(event: BotEvent):
-    event = SimpleBotEvent(event)
-    donor = await Donor.find_one(Donor.user_id == event.from_id, fetch_links=True)
-
-    recipients = await Recipient.find(Recipient.donor.id == donor.id, fetch_links=True).to_list()
-
-    if event.text.lower() == "статистика":
-        await send_stats(event)
-        return
-
-    if recipients:  # if the donor has at least one recipient
-        match event.text:
-            case HomeKeyboard.EDIT_MY_LIST:
-                await send_all_recipients_list(event)
-
-            case HomeKeyboard.MY_LIST:
-                message = "🎁 Список людей, которым тебе нужно купить подарки:\n"
-                for recipient in recipients:
-                    message += f"- {fmt.recipient_name(recipient.name)} {recipient.age} лет (#{recipient.identifier}) -- {recipient.gift_description}.\n"
-                await event.answer(message)
-
-            case HomeKeyboard.INFO:
-                message = (
-                    f"📍 Отнести подарки в населенном пункте {donor.municipality.name} можно по следующему адресу:"
-                    "\n"
-                    f"{donor.municipality.address}."
-                    "\n"
-                    "\n"
-                    "🚨 Важно:"
-                    "\n"
-                    f"1. Подарки следует принести до {settings.DEADLINE}."
-                    f"\n"
-                    "2. На подарке должны быть подписаны имя получателя и его идентификационный номер в системе."
-                    "\n"
-                    f"Эту информацию можно узнать, нажав на кнопку <<{HomeKeyboard.MY_LIST}>>."
-                )
-                await event.answer(message)
-
-            case HomeKeyboard.I_BROUGHT_GIFTS:
-                message = "Проверь еще раз, что ты принес подарки для всех получателей:\n"
-                for recipient in recipients:
-                    message += f"- {recipient.name} (#{recipient.identifier}) -- {recipient.gift_description}.\n"
-
-                kbd = ConfirmGiftsDeliveryKeyboard()
-                await event.answer(message, keyboard=kbd.get_keyboard())
-                await FSM.set_state(state=HomeState.CONFIRM_I_BROUGHT_GIFTS, event=event, for_what=ForWhat.FOR_USER)
-
-            case HomeKeyboard.REJECT_PARTICIPATION:
-                await send_rejection_confirmation(event)
-
-            case _:
-                await event.answer(messages.INVALID_OPTION)
-
-    else:  # if donor has no recipients
-        match event.text:
-            case HomeKeyboardNoRecipients.EDIT_MY_LIST:
-                await send_all_recipients_list(event)
-
-            case HomeKeyboardNoRecipients.REJECT_PARTICIPATION:
-                await send_rejection_confirmation(event)
-
-            case _:
-                await event.answer(messages.INVALID_OPTION)
 
 
 async def send_rejection_confirmation(event: SimpleBotEvent):
@@ -304,8 +313,8 @@ async def confirm_rejection(event: BotEvent):
             await event.answer(messages.INVALID_OPTION)
 
 
-@reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.CONFIRM_I_BROUGHT_GIFTS, for_what=FOR_USER))
-async def confirm_i_brought_gifts(event: BotEvent):
+@reg.with_decorator(StateFilter(fsm=FSM, state=HomeState.CONFIRM_GIFTS_DELIVERY, for_what=FOR_USER))
+async def confirm_gifts_delivery(event: BotEvent):
     event = SimpleBotEvent(event)
     match event.text:
         case ConfirmGiftsDeliveryKeyboard.TRUE:

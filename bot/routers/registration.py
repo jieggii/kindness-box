@@ -79,8 +79,8 @@ async def choose_organization_option(event: BotEvent):
     match event.text:
         case ChooseOrganizationOptionKeyboard.BY_MYSELF:  # no organization
             await request_phone_number(event)
-            await FSM.set_state(state=RegistrationState.SET_PHONE_NUMBER, event=event, for_what=FOR_USER)
             await FSM.add_data(event=event, for_what=FOR_USER, state_data={FSMDataKey.ORGANIZATION_NAME: None})
+            await FSM.set_state(state=RegistrationState.SET_PHONE_NUMBER, event=event, for_what=FOR_USER)
 
         case ChooseOrganizationOptionKeyboard.BY_ORGANIZATION:  # organization
             kbd = Keyboard()
@@ -100,11 +100,12 @@ async def set_organization_name(event: BotEvent):
     organization_name = event.text
 
     if len(organization_name) > settings.MAX_ORGANIZATION_NAME_LENGTH:
-        return await event.answer(f"Слишком длинное название организации. {messages.TRY_AGAIN}")
+        await event.answer(f"Слишком длинное название организации. {messages.TRY_AGAIN}")
+        return
 
     await request_phone_number(event)
-    await FSM.set_state(state=RegistrationState.SET_PHONE_NUMBER, event=event, for_what=FOR_USER)
     await FSM.add_data(event=event, for_what=FOR_USER, state_data={FSMDataKey.ORGANIZATION_NAME: organization_name})
+    await FSM.set_state(state=RegistrationState.SET_PHONE_NUMBER, event=event, for_what=FOR_USER)
 
 
 async def request_phone_number(event: BotEvent):
