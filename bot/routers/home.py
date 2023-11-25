@@ -246,8 +246,13 @@ async def send_stats(event: SimpleBotEvent):
     now = datetime.now(_STATS_TIMEZONE)
     message = f"Статистика на {now.strftime(_STATS_TIME_FORMAT)}:\n"
 
+    total_donors = 0
+    total_recipients = 0
+
     async for municipality in Municipality.find_all():
-        total_recipients = 0
+        donors = await Donor.find(Donor.municipality.id == municipality.id).count()
+
+        recipients = 0
         chosen_recipients = 0
         satisfied_recipients = 0  # number of recipients whose gifts has been brought to a point
 
@@ -257,21 +262,31 @@ async def send_stats(event: SimpleBotEvent):
                 if recipient.donor.brought_gifts:
                     satisfied_recipients += 1
 
-            total_recipients += 1
+            recipients += 1
+
+        total_donors += donors
+        total_recipients += recipients
 
         message += (
-            f"{municipality.name}:\n"
-            f"- Выбрано {chosen_recipients}/{total_recipients} человек.\n"
-            f"- Принесено {satisfied_recipients}/{chosen_recipients} подарков.\n\n"
+            f"{municipality.name}:"
+            "\n"
+            f"- Выбрано {chosen_recipients}/{recipients} человек."
+            "\n"
+            f"- Принесено {satisfied_recipients}/{chosen_recipients} подарков."
+            "\n"
+            f"- 1 участник акции в среднем выбрал {round(recipients / donors, 2)} человек."
+            "\n"
+            "\n"
         )
 
-    donors_count = await Donor.find_all().count()
-    recipients_count = await Recipient.find_all().count()
-
     message += (
-        "Общая статистика:\n"
-        f"Зарегистрировано участников: {donors_count}\n"
-        f"Зарегистрировано получателей: {recipients_count}\n"
+        "Общая статистика:"
+        "\n"
+        f"- Зарегистрировано {total_donors} участников."
+        "\n"
+        f"- Зарегистрировано {total_recipients} получателей."
+        "\n"
+        f"- 1 участник акции в среднем выбрал {round(total_donors / total_recipients, 2)} человек."
     )
 
     await event.answer(message)
