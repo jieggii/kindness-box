@@ -16,4 +16,5 @@ secrets:
 	touch $(SECRETS_DIR)/mongo/username $(SECRETS_DIR)/mongo/password
 
 .PHONY: redeploy
+redeploy:g
 	git pull && docker compose build && docker copmpose down && docker compose up -d
