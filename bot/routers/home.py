@@ -306,9 +306,6 @@ async def send_stats(event: SimpleBotEvent):
         f"- {total_active_donors}/{total_donors} участников акции выбрали хотя бы одного человека"
         "\n"
         f"- 1 участник акции в среднем выбрал {round(total_selected_recipients / total_donors, 2) if total_donors != 0 else 0} человек"
-        "\n"
-        "\n"
-        f"(\"участник акции\" - это пользователь бота, который выбирает, кому сделать подарок)."
     )
 
     await event.answer(message)
