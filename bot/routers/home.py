@@ -251,6 +251,7 @@ async def send_stats(event: SimpleBotEvent):
 
     total_recipients = 0
     total_selected_recipients = 0
+    total_satisfied_recipients = 0
 
     async for municipality in Municipality.find_all():
         # all donors in this municipality:
@@ -275,8 +276,11 @@ async def send_stats(event: SimpleBotEvent):
                     satisfied_recipients_cnt += selected_recipients_cnt
 
         total_donors += donors_cnt
+        total_active_donors += active_donors_cnt
+
         total_recipients += recipients_cnt
         total_selected_recipients += selected_recipients_cnt
+        total_satisfied_recipients += satisfied_recipients_cnt
 
         message += (
             f"{municipality.name}:"
@@ -285,6 +289,10 @@ async def send_stats(event: SimpleBotEvent):
             "\n"
             f"- Принесено {satisfied_recipients_cnt}/{selected_recipients_cnt} подарков."
             "\n"
+            f"- Зарегистрировано {donors_cnt} участников акции."
+            f"\n"
+            f"- {active_donors_cnt}/{donors_cnt} участников акции выбрали хотя бы одного человека."
+            "\n"
             f"- 1 участник акции в среднем выбрал {round(selected_recipients_cnt / active_donors_cnt, 2) if active_donors_cnt != 0 else 0} человек."
             "\n"
             "\n"
@@ -292,6 +300,10 @@ async def send_stats(event: SimpleBotEvent):
 
     message += (
         "Общая статистика:"
+        "\n"
+        f"- Выбрано {total_selected_recipients}/{total_recipients} человек."
+        "\n"
+        f"- Принесено {total_satisfied_recipients}/{total_selected_recipients} подарков."
         "\n"
         f"- Зарегистрировано {total_donors} участников."
         "\n"
