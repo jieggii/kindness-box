@@ -247,36 +247,45 @@ async def send_stats(event: SimpleBotEvent):
     message = f"Статистика на {now.strftime(_STATS_TIME_FORMAT)}:\n"
 
     total_donors = 0
+    total_active_donors = 0
+
     total_recipients = 0
-    total_chosen_recipients = 0
+    total_selected_recipients = 0
 
     async for municipality in Municipality.find_all():
-        donors = await Donor.find(Donor.municipality.id == municipality.id).count()
+        # all donors in this municipality:
+        donors: list[Donor] = await Donor.find(Donor.municipality.id == municipality.id).to_list()
 
-        recipients = 0
-        chosen_recipients = 0
-        satisfied_recipients = 0  # number of recipients whose gifts has been brought to a point
+        donors_cnt = len(donors)  # number of all donors in this municipality
+        active_donors_cnt = 0  # number of donors who have selected at least one recipient
 
-        async for recipient in Recipient.find(Recipient.municipality.id == municipality.id, fetch_links=True):
-            if recipient.donor:
-                chosen_recipients += 1
-                if recipient.donor.brought_gifts:
-                    satisfied_recipients += 1
+        recipients_cnt = await Recipient.find(
+            Recipient.municipality.id == municipality.id
+        ).count()  # number of all recipients in this municipality
 
-            recipients += 1
+        selected_recipients_cnt = 0  # number of recipients who have been chosen by a donor
+        satisfied_recipients_cnt = 0  # number of recipients whose gift has been delivered
 
-        total_donors += donors
-        total_recipients += recipients
-        total_chosen_recipients += chosen_recipients
+        for donor in donors:
+            selected_recipients_by_donor_cnt = await Recipient.find(Recipient.donor.id == donor.id).count()
+            if selected_recipients_by_donor_cnt > 0:
+                active_donors_cnt += 1
+                selected_recipients_cnt += selected_recipients_by_donor_cnt
+                if donor.brought_gifts:
+                    satisfied_recipients_cnt += selected_recipients_cnt
+
+        total_donors += donors_cnt
+        total_recipients += recipients_cnt
+        total_selected_recipients += selected_recipients_cnt
 
         message += (
             f"{municipality.name}:"
             "\n"
-            f"- Выбрано {chosen_recipients}/{recipients} человек."
+            f"- Выбрано {selected_recipients_cnt}/{recipients_cnt} человек."
             "\n"
-            f"- Принесено {satisfied_recipients}/{chosen_recipients} подарков."
-            # "\n"
-            # f"- 1 участник акции в среднем выбрал {round(chosen_recipients / donors, 2) if donors != 0 else 0} человек."
+            f"- Принесено {satisfied_recipients_cnt}/{selected_recipients_cnt} подарков."
+            "\n"
+            f"- 1 участник акции в среднем выбрал {round(selected_recipients_cnt / active_donors_cnt, 2) if active_donors_cnt != 0 else 0} человек."
             "\n"
             "\n"
         )
@@ -287,8 +296,8 @@ async def send_stats(event: SimpleBotEvent):
         f"- Зарегистрировано {total_donors} участников."
         "\n"
         f"- Зарегистрировано {total_recipients} получателей."
-        # "\n"
-        # f"- 1 участник акции в среднем выбрал {round(total_chosen_recipients / total_donors, 2) if total_donors != 0 else 0} человек."
+        "\n"
+        f"- 1 участник акции в среднем выбрал {round(total_selected_recipients / total_donors, 2) if total_donors != 0 else 0} человек."
     )
 
     await event.answer(message)
