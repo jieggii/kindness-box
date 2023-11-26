@@ -244,7 +244,7 @@ async def choose_recipients(event: BotEvent):
 
 async def send_stats(event: SimpleBotEvent):
     now = datetime.now(_STATS_TIMEZONE)
-    message = f"Статистика на {now.strftime(_STATS_TIME_FORMAT)}:\n"
+    message = f"Статистика на {now.strftime(_STATS_TIME_FORMAT)}\n\n"
 
     total_donors = 0
     total_active_donors = 0
@@ -289,8 +289,6 @@ async def send_stats(event: SimpleBotEvent):
             "\n"
             f"- Принесено {satisfied_recipients_cnt}/{selected_recipients_cnt} подарков"
             "\n"
-            f"- Зарегистрировано {donors_cnt} участников акции"
-            f"\n"
             f"- {active_donors_cnt}/{donors_cnt} участников акции выбрали хотя бы одного человека"
             "\n"
             f"- 1 участник акции в среднем выбрал {round(selected_recipients_cnt / active_donors_cnt, 2) if active_donors_cnt != 0 else 0} человек"
@@ -305,9 +303,7 @@ async def send_stats(event: SimpleBotEvent):
         "\n"
         f"- Принесено {total_satisfied_recipients}/{total_selected_recipients} подарков"
         "\n"
-        f"- Зарегистрировано {total_donors} участников"
-        "\n"
-        f"- Зарегистрировано {total_recipients} получателей"
+        f"- {total_active_donors}/{total_donors} участников акции выбрали хотя бы одного человека"
         "\n"
         f"- 1 участник акции в среднем выбрал {round(total_selected_recipients / total_donors, 2) if total_donors != 0 else 0} человек"
         "\n"
