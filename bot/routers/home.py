@@ -273,7 +273,7 @@ async def send_stats(event: SimpleBotEvent):
                 active_donors_cnt += 1
                 selected_recipients_cnt += selected_recipients_by_donor_cnt
                 if donor.brought_gifts:
-                    satisfied_recipients_cnt += selected_recipients_cnt
+                    satisfied_recipients_cnt += selected_recipients_by_donor_cnt
 
         total_donors += donors_cnt
         total_active_donors += active_donors_cnt
