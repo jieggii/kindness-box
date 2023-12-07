@@ -5,11 +5,9 @@ from os import path
 
 from loguru import logger
 
-from bot.database.init import init_database
 from bot.database.models import Municipality, Recipient
 
-MONGO_USERNAME_FILE = "./.secrets/mongo/username"
-MONGO_PASSWORD_FILE = "./.secrets/mongo/password"
+from common import argument_parser, database
 
 
 def read_file(file_path: str) -> str:
@@ -18,15 +16,10 @@ def read_file(file_path: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="create-reports.py",
+    parser = argument_parser.get_argument_parser(
+        name="create-reports.py",
         description="Use this script to create reports for all municipalities",
     )
-
-    database_group = parser.add_argument_group("database connection")
-    database_group.add_argument("--host", type=str, default="localhost", help="database host")
-    database_group.add_argument("--port", "-p", type=int, default=27017, help="database port")
-    database_group.add_argument("--database", "-d", type=str, default="kindness-box", help="database name")
 
     parser.add_argument("--workdir", "-w", type=str, default="./", help="output dir")
     return parser.parse_args()
@@ -40,15 +33,7 @@ def main():
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-
-    logger.info("reading mongo credentials")
-    username, password = read_file(MONGO_USERNAME_FILE), read_file(MONGO_PASSWORD_FILE)
-
-    logger.info(f"connecting to mongo database {args.database} at {username}@{args.host}:{args.port}")
-
-    loop.run_until_complete(
-        init_database(host=args.host, port=args.port, username=username, password=password, database=args.database)
-    )
+    database.init_database(loop, args.host, args.port, args.database)
 
     municipalities = loop.run_until_complete(Municipality.find_all().to_list())
     for municipality in municipalities:

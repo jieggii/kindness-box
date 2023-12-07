@@ -20,8 +20,9 @@ import sys
 
 from loguru import logger
 
-from bot.database.init import init_database
 from bot.database.models import Municipality, Recipient
+
+from common import argument_parser, database
 
 MONGO_USERNAME_FILE = "./.secrets/mongo/username"
 MONGO_PASSWORD_FILE = "./.secrets/mongo/password"
@@ -52,15 +53,10 @@ def read_file(file_path: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="init-db.py",
+    parser = argument_parser.get_argument_parser(
+        name="init-db.py",
         description="Use this script to fill kindness-box database",
     )
-
-    database_group = parser.add_argument_group("database connection")
-    database_group.add_argument("--host", type=str, default="localhost", help="database host")
-    database_group.add_argument("-p", "--port", type=int, default=27017, help="database port")
-    database_group.add_argument("-d", "--database", type=str, default="kindness-box", help="database name")
 
     parser_group = parser.add_argument_group("parser settings")
     parser_group.add_argument("-l", "--last-id", type=int, default=None, help="id to interrupt parsing after")
@@ -85,15 +81,7 @@ def main():
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-
-    logger.info("reading mongo credentials")
-    username, password = read_file(MONGO_USERNAME_FILE), read_file(MONGO_PASSWORD_FILE)
-
-    logger.info(f"connecting to mongo database {args.database} at {username}@{args.host}:{args.port}")
-
-    loop.run_until_complete(
-        init_database(host=args.host, port=args.port, username=username, password=password, database=args.database)
-    )
+    database.init_database(loop, args.host, args.port, args.database)
 
     logger.info(f"{args.file.name}: reading")
 
