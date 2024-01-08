@@ -33,7 +33,7 @@ def main():
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    database.init_database(loop, args.host, args.port, args.database)
+    database.init_database(loop, args.mongo_host, args.mongo_port, args.mongo_database)
 
     municipalities = loop.run_until_complete(Municipality.find_all().to_list())
     for municipality in municipalities:
@@ -73,6 +73,7 @@ def main():
                     donor.name if donor else NOT_AVAILABLE,
                     f"vk.me/id{donor.user_id}, {donor.phone_number}" if donor else NOT_AVAILABLE
                 ])
+
         logger.info(f"wrote {filepath}")
 
 
